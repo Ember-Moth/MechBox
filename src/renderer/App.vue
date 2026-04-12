@@ -94,7 +94,7 @@ onUnmounted(() => {
                 >
                     <template v-for="item in menuItems" :key="item.key">
                         <a-menu-divider v-if="item.type === 'divider'" />
-                        <a-menu-item v-else>
+                        <a-menu-item v-else :key="item.key">
                             <template #icon>
                                 <component :is="item.icon" />
                             </template>
