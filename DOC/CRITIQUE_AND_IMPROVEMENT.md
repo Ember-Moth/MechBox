@@ -148,5 +148,25 @@
 
 ---
 
+## 8. 代码级审计与重构建议 (Code & Architecture Audit)
+
+通过对现有项目执行底层静态分析与架构审查，发现 MechBox 在代码实现细节上仍存在以下阻碍其成为“大型工业软件”的隐患，需在下个迭代版本中作为技术债优先偿还：
+
+### 8.1 架构级缺陷：Vue Router 的缺失与“巨石”组件
+*   **审计发现**：尽管 `package.json` 中安装了 `vue-router`，但 `src/renderer/App.vue` 依然使用极其原始的 `v-if / v-else-if` 堆砌了近 30 个页面的条件渲染。
+*   **重构建议**：必须立刻引入并配置真实的 Vue Router。目前的巨石结构会导致组件生命周期混乱、无法实现基于 URL 的深层链接（例如无法一键分享特定的选型结果）、浏览器前进/后退历史失效，且极其不利于后续的代码分割（Code Splitting）和懒加载（Lazy Load）。
+
+### 8.2 数据库缺陷：每次启动时的“暴力重置”
+*   **审计发现**：在 `src/main/db/database.ts` 的 `initDatabase()` 方法中，存在 `DROP TABLE IF EXISTS` 和全量读取 JSON 重新插入数据的暴力逻辑。
+*   **重构建议**：目前的做法会导致工程师自己维护的非标数据或修改过的公差表在每次软件重启时被彻底清空！必须引入数据库迁移脚本（Migrations），通过比对库中的 `data_version` 表和本地文件的 hash 值，实现**增量更新**（Upsert），确保用户自定义数据（`user_standards`）的绝对持久化安全。
+
+### 8.3 TypeScript 类型安全与接口脱节
+通过 `vue-tsc` 的严格模式编译，捕获到多个类型雪崩风险：
+*   **引擎接口违约**：在 `src/renderer/engine/drives/belt.ts` 与 `chain.ts` 中，计算返回值遗漏了强制要求的 `warnings: Warning[]` 属性。这会导致在边界工况下，UI 层的警告提示条（WarningBanner）因访问 undefined 而发生渲染崩溃。
+*   **主/渲染进程类型断层**：在 `ExcelImportPage` 和 `ReverseIdentifyPage` 中，渲染进程试图调用 `window.electron.db.importExcel` 等 IPC 通信方法，但 `src/renderer/types/electron.d.ts` 环境声明文件中并未定义这些方法。这表明前后端的 IPC 类型契约（Contract）已脱节。
+*   **重构建议**：建议引入类似 `electron-trpc` 或严格抽取一套共用的 `.d.ts` 接口描述文件。每次主进程增加暴露的方法时，必须同步更新类型定义，保证在编译阶段就能彻底拦截调用错误。
+
+---
+
 ## 结语：工业软件的终极壁垒
 MechBox 的核心护城河不在于“连接云端”，而在于**“断网状态下的绝对可靠、资料的浩瀚与计算的全能”**。未来的 MechBox 将通过“多物理场/系统级耦合求解”、“超大规模本地工程百科知识库”、“与 CAD 的本机双向热链接”以及“参数化 3D 孪生反馈”，成为机械工程师在任何严苛或保密环境下最值得信赖的离线桌面指挥中心。
