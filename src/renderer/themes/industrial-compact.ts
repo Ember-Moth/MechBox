@@ -67,15 +67,12 @@ export const industrialCompactTheme = {
       paddingMD: 8,
     },
     Form: {
-      itemMarginBottom: 12,       // 从24px减小到12px
+      itemMarginBottom: 12,
       labelColonMarginRight: 4,
     },
     Input: {
       paddingInline: 8,
       paddingBlock: 4,
-    },
-    Select: {
-      paddingInline: 8,
     },
     Descriptions: {
       itemPaddingBottom: 8,

@@ -4,7 +4,7 @@
  * 用于逆向计算和参数优化
  */
 
-import { Warning } from '../types'
+import { Warning } from './types'
 
 export interface SolverResult<T> {
   value: T

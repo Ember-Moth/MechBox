@@ -83,7 +83,7 @@ function toggleFavorite() {
       conditions: { ...conditions.value },
       results: {
         preload: preloadResult.value,
-        stress: stressResult.value?.von_mises
+        stress: stressResult.value?.value.von_mises
       }
     })
     isFavorited.value = true
@@ -107,6 +107,10 @@ function exportCAD() {
   a.download = `bolt_assembly_${selectedBolt.value.designation}.txt`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function printReport() {
+  window.print()
 }
 </script>
 
@@ -132,7 +136,7 @@ function exportCAD() {
         <a-button size="small" @click="exportCAD">
           <template #icon><DownloadOutlined /></template>导出CAD
         </a-button>
-        <a-button size="small" @click="() => window.print()">
+        <a-button size="small" @click="printReport">
           <template #icon><PrinterOutlined /></template>打印报告
         </a-button>
       </a-space>

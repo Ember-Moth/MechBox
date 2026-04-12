@@ -123,7 +123,7 @@ export const bearingLifeScan = (
   speed: { min: number; max: number; steps: number },
   C_r: number
 ): { matrix: number[][]; loadValues: number[]; speedValues: number[] } => {
-  return doubleParamScan(
+  const result = doubleParamScan(
     { C_r },
     { name: 'Fr', min: radialLoad.min, max: radialLoad.max, steps: radialLoad.steps },
     { name: 'speed', min: speed.min, max: speed.max, steps: speed.steps },
@@ -134,4 +134,9 @@ export const bearingLifeScan = (
       return { L10h }
     }
   )
+  return {
+    matrix: result.matrix,
+    loadValues: result.param1Values,
+    speedValues: result.param2Values
+  }
 }

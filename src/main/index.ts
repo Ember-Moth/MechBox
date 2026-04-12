@@ -101,7 +101,7 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle("db-user-standard-get", (_, id) => {
-    const row = getDatabase().prepare("SELECT * FROM user_standards WHERE id = ?").get(id);
+    const row = getDatabase().prepare("SELECT * FROM user_standards WHERE id = ?").get(id) as any;
     return row ? { ...row, data: JSON.parse(row.data) } : null;
   });
 }

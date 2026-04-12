@@ -71,6 +71,10 @@ function toggleFavorite() {
     isFavorited.value = true
   }
 }
+
+function printReport() {
+  window.print()
+}
 </script>
 
 <template>
@@ -91,7 +95,7 @@ function toggleFavorite() {
         <a-button size="small" type="primary" @click="exportPDF">
           <template #icon><FilePdfOutlined /></template>创建PDF
         </a-button>
-        <a-button size="small" @click="() => window.print()">
+        <a-button size="small" @click="printReport">
           <template #icon><PrinterOutlined /></template>打印报告
         </a-button>
       </a-space>

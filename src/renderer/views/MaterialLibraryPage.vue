@@ -235,7 +235,7 @@ function selectMaterial(mat: Material) {
               :data-source="filteredMaterials"
               :pagination="false"
               size="small"
-              :row-class-name="(record) => selectedMaterial?.id === record.id ? 'selected-row' : ''"
+              :row-class-name="(record: any) => selectedMaterial?.id === record.id ? 'selected-row' : ''"
               @click="selectMaterial"
             >
               <template #bodyCell="{ column, record }">
