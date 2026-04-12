@@ -1,5 +1,17 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from "electron";
 
-contextBridge.exposeInMainWorld('electron', {
-  // 未来可以在这里暴露安全的 API，例如文件读取
-})
+contextBridge.exposeInMainWorld("electron", {
+  db: {
+    queryITGrade: (grade: string, sizeIndex: number) =>
+      ipcRenderer.invoke("db-query-it-grade", grade, sizeIndex),
+    queryDeviation: (
+      type: "holes" | "shafts",
+      position: string,
+      sizeIndex: number,
+    ) => ipcRenderer.invoke("db-query-deviation", type, position, sizeIndex),
+    queryOringList: (standard: string) =>
+      ipcRenderer.invoke("db-query-oring-list", standard),
+    queryOringSpec: (standard: string, code: string) =>
+      ipcRenderer.invoke("db-query-oring-spec", standard, code),
+  },
+});
