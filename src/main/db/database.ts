@@ -43,20 +43,30 @@ export function initDatabase() {
 }
 
 function createV3Schema() {
-  const schemaPath = join(__dirname, "../../../DOC/schema_v3.sql");
-  if (!existsSync(schemaPath)) {
-    console.warn("V3 schema file not found at:", schemaPath);
+  const candidates = [
+    join(app.getAppPath(), "DOC", "schema_v3.sql"),
+    join(__dirname, "../../../DOC/schema_v3.sql"),
+    join(process.cwd(), "DOC", "schema_v3.sql"),
+  ];
+  const schemaPath = candidates.find((candidate) => existsSync(candidate));
+  if (!schemaPath) {
+    console.warn("V3 schema file not found. Checked:", candidates);
     return;
   }
-  
+
   const schemaSql = readFileSync(schemaPath, "utf-8");
   db.exec(schemaSql);
-  console.log("V3 schema loaded successfully");
+  console.log("V3 schema loaded successfully from:", schemaPath);
 }
 
 function seedInitialData() {
-  const seedPath = join(__dirname, "../../../DOC/seed_sources_v3.sql");
-  if (existsSync(seedPath)) {
+  const candidates = [
+    join(app.getAppPath(), "DOC", "seed_sources_v3.sql"),
+    join(__dirname, "../../../DOC/seed_sources_v3.sql"),
+    join(process.cwd(), "DOC", "seed_sources_v3.sql"),
+  ];
+  const seedPath = candidates.find((candidate) => existsSync(candidate));
+  if (seedPath) {
     const seedSql = readFileSync(seedPath, "utf-8");
     db.exec(seedSql);
   }

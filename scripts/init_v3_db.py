@@ -366,8 +366,12 @@ def import_khk_vendor_parts(conn: sqlite3.Connection):
 
     count = 0
     for url in KHK_URLS:
-        html = fetch_text(url)
-        product = parse_khk_page(html, url)
+        try:
+            html = fetch_text(url)
+            product = parse_khk_page(html, url)
+        except Exception as exc:
+            print(f"skip KHK url {url}: {exc}", file=sys.stderr)
+            continue
         vendor_part_id = f"vendor_khk_{slugify(product['sku'])}"
         module_value = first_number(product["specs"].get("Module", ""))
         linked_entity_id = (
@@ -422,6 +426,9 @@ def import_khk_vendor_parts(conn: sqlite3.Connection):
                     (vendor_part_id, attr_code, numeric_value, unit_hints.get(key)),
                 )
         count += 1
+
+    if count == 0:
+        raise RuntimeError("no KHK vendor parts imported")
 
     conn.execute(
         """

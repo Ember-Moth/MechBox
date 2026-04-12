@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStandardStore } from '../../store/useStandardStore'
 import { calcLife, calcEquivalentLoad } from '../../engine/bearings/life'
+import { calcISO281Life, calcKappa, getA1Factor } from '../../engine/bearings/iso281'
 import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -48,8 +49,20 @@ const results = computed(() => {
 
   const P = calcEquivalentLoad(conditions.value.Fr, conditions.value.Fa, conditions.value.X, conditions.value.Y)
   const life = calcLife(selectedBearing.value.C_r, P, 'ball', conditions.value.speed)
+  
+  // ISO 281 修正寿命计算 (Section 10.2)
+  const kappa = calcKappa(32, 16)  // 简化假设: 工作粘度32, 额定粘度16
+  const iso281 = calcISO281Life({
+    C_r: selectedBearing.value.C_r,
+    P,
+    n: conditions.value.speed,
+    bearingType: 'ball',
+    kappa,
+    a_1: 1.0,  // 90% 可靠性
+    eta_c: 0.8  // 正常污染水平
+  })
 
-  return { P, life }
+  return { P, life, iso281 }
 })
 
 async function exportPDF() {
@@ -182,11 +195,24 @@ function printReport() {
                 <div class="res-value">{{ results.P.toFixed(2) }}</div>
                 <div class="res-label">基本额定寿命 L10 [百万转]</div>
                 <div class="res-value">{{ results.life.value.L10.toFixed(2) }}</div>
-                <div class="res-label">小时寿命 L10h [h] <InfoCircleOutlined class="info-icon" /></div>
+                <div class="res-label">小时寿命 L10h [h]</div>
                 <div class="res-value" :class="{ error: results.life.warnings.length }">{{ results.life.value.L10h.toFixed(0) }}</div>
               </div>
+              
+              <a-divider>ISO 281 修正额定寿命</a-divider>
+              <div class="result-grid">
+                <div class="res-label">润滑膜厚度比 κ</div>
+                <div class="res-value">{{ results.iso281.value.warnings.find(w => w.level === 'info') ? '—' : '1.0' }}</div>
+                <div class="res-label">修正系数 a_ISO</div>
+                <div class="res-value">{{ results.iso281.value.a_ISO.toFixed(2) }}</div>
+                <div class="res-label">修正寿命 L10m [百万转]</div>
+                <div class="res-value">{{ results.iso281.value.L10m.toFixed(2) }}</div>
+                <div class="res-label">修正小时寿命 L10mh [h]</div>
+                <div class="res-value" :class="{ error: results.iso281.value.L10mh < results.life.value.L10h }">{{ results.iso281.value.L10mh.toFixed(0) }}</div>
+              </div>
+              
               <a-alert
-                v-for="(w, index) in results.life.warnings"
+                v-for="(w, index) in [...results.life.warnings, ...results.iso281.value.warnings]"
                 :key="index"
                 :message="w.message"
                 :type="w.level === 'error' ? 'error' : (w.level === 'warning' ? 'warning' : 'info')"
