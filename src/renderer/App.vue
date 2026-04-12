@@ -21,6 +21,10 @@ import {
     ThunderboltOutlined,
     RocketOutlined,
     DashboardFilled,
+    ScissorOutlined,
+    DashOutlined,
+    MedicineBoxOutlined,
+    ExperimentOutlined,
 } from "@ant-design/icons-vue";
 import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
@@ -29,6 +33,11 @@ import SealsPage from "./views/seals/SealsPage.vue";
 import BearingsPage from "./views/bearings/BearingsPage.vue";
 import BoltsPage from "./views/bolts/BoltsPage.vue";
 import DrivesPage from "./views/DrivesPage.vue";
+import GearsPage from "./views/GearsPage.vue";
+import SpringsPage from "./views/SpringsPage.vue";
+import HydraulicsPage from "./views/HydraulicsPage.vue";
+import MotorsPage from "./views/MotorsPage.vue";
+import ShaftsPage from "./views/ShaftsPage.vue";
 import UnitConverterPage from "./views/UnitConverterPage.vue";
 import MaterialLibraryPage from "./views/MaterialLibraryPage.vue";
 import StandardPartsLibraryPage from "./views/StandardPartsLibraryPage.vue";
@@ -54,6 +63,11 @@ const menuItems = [
     { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
     { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },
     { key: "drives", icon: ThunderboltOutlined, label: "传动工具" },
+    { key: "gears", icon: RocketOutlined, label: "齿轮计算" },
+    { key: "springs", icon: ScissorOutlined, label: "弹簧计算" },
+    { key: "hydraulics", icon: DashOutlined, label: "液压气动" },
+    { key: "motors", icon: ExperimentOutlined, label: "电机选型" },
+    { key: "shafts", icon: MedicineBoxOutlined, label: "轴强度校核" },
     { key: "divider-2", type: "divider" },
     { key: "units", icon: SwapOutlined, label: "单位换算" },
     { key: "materials", icon: DatabaseOutlined, label: "材料库" },
@@ -145,6 +159,21 @@ onUnmounted(() => {
                         </div>
                         <div v-else-if="selectedKeys[0] === 'drives'">
                             <DrivesPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'gears'">
+                            <GearsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'springs'">
+                            <SpringsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'hydraulics'">
+                            <HydraulicsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'motors'">
+                            <MotorsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'shafts'">
+                            <ShaftsPage />
                         </div>
                         <div v-else-if="selectedKeys[0] === 'units'">
                             <UnitConverterPage />

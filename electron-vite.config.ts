@@ -17,5 +17,9 @@ export default defineConfig({
         "@shared": resolve("src/shared"),
       },
     },
+    optimizeDeps: {
+      include: ['jspdf', 'html2canvas'],
+      exclude: ['@renderer/engine'],
+    },
   },
 });
