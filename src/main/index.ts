@@ -573,14 +573,12 @@ function registerIpcHandlers() {
     return row ? { ...row, data: JSON.parse(row.data) } : null;
   });
 
-  // 螺栓查询
-  ipcMain.handle("db-search", (_, query: string, limit: number = 20) => {
+  // 全局搜索 (FTS5) - 使用 snippet 提供更友好的搜索结果
+  ipcMain.handle("db-global-search", (_, query: string, limit: number = 20) => {
     try {
-      return getDatabase().prepare(
-        `SELECT sd.*, match_info FROM search_fts sf 
-         JOIN search_document sd ON sf.doc_id = sd.doc_id 
-         WHERE search_fts MATCH ? ORDER BY rank LIMIT ?`
-      ).all(`${query}*`, limit);
+      return getDatabase()
+        .prepare("SELECT doc_id, entity_type, entity_id, title, snippet(search_fts, '<b>', '</b>', '...', 30) as snippet FROM search_fts JOIN search_document ON search_fts.doc_id = search_document.doc_id WHERE search_fts MATCH ? ORDER BY rank LIMIT ?")
+        .all(`${query}*`, limit);
     } catch {
       return [];
     }
@@ -688,17 +686,6 @@ function registerIpcHandlers() {
         .all(domainCode);
     }
     return getDatabase().prepare("SELECT * FROM vendor_part").all();
-  });
-
-  // 全局搜索 (FTS5)
-  ipcMain.handle("db-global-search", (_, query: string, limit: number = 20) => {
-    try {
-      return getDatabase()
-        .prepare("SELECT doc_id, entity_type, entity_id, title, snippet(search_fts, '<b>', '</b>', '...', 30) as snippet FROM search_fts JOIN search_document ON search_fts.doc_id = search_document.doc_id WHERE search_fts MATCH ? ORDER BY rank LIMIT ?")
-        .all(`${query}*`, limit);
-    } catch {
-      return [];
-    }
   });
 
   // 数据源

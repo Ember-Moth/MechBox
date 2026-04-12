@@ -3,13 +3,14 @@ import { ref, computed, onMounted } from 'vue'
 import { useStandardStore } from '../../store/useStandardStore'
 import { calcLife, calcEquivalentLoad } from '../../engine/bearings/life'
 import { calcISO281Life, calcKappa } from '../../engine/bearings/iso281'
-import { FilePdfOutlined, PrinterOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { usePdfExport } from '../../composables/usePdfExport'
+import { useFavorite } from '../../composables/useFavorite'
+import { StarOutlined, StarTwoTone, PrinterOutlined } from '@ant-design/icons-vue'
 import Preview3D from '../../components/Preview3D.vue'
 
 const store = useStandardStore()
-const isFavorited = ref(false)
+const { isFavorited, toggleFavorite, checkFavorite } = useFavorite()
+const { isExporting, exportPdf } = usePdfExport()
 
 // 工况参数
 const conditions = ref({
@@ -66,37 +67,26 @@ const results = computed(() => {
   return { P, life, iso281, kappa }
 })
 
-async function exportPDF() {
-  const element = document.querySelector('.bearings-page') as HTMLElement
-  if (!element) return
-
-  const canvas = await html2canvas(element, { scale: 2, useCORS: true })
-  const imgData = canvas.toDataURL('image/png')
-
-  const pdf = new jsPDF('p', 'mm', 'a4')
-  const pdfWidth = pdf.internal.pageSize.getWidth()
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-  pdf.save(`MechBox-Bearing-${selectedDesignation.value}-${new Date().toISOString().slice(0,10)}.pdf`)
+async function handleExportPdf() {
+  await exportPdf({
+    selector: '.bearings-page',
+    filename: `MechBox-Bearing-${selectedDesignation.value}`,
+  })
 }
 
-function toggleFavorite() {
+function handleToggleFavorite() {
   if (!selectedBearing.value) return
-  
-  if (isFavorited.value) {
-    const id = `bearing_${selectedDesignation.value}`
-    store.removeFavorite(id)
-    isFavorited.value = false
-  } else {
-    store.addFavorite('bearings', `轴承 ${selectedDesignation.value}`, {
+  const id = `bearing_${selectedDesignation.value}`
+  toggleFavorite(id, {
+    module: 'bearings',
+    name: `轴承 ${selectedDesignation.value}`,
+    data: {
       designation: selectedDesignation.value,
       bearing: selectedBearing.value,
       conditions: { ...conditions.value },
       results: results.value
-    })
-    isFavorited.value = true
-  }
+    },
+  })
 }
 
 function printReport() {
@@ -111,7 +101,7 @@ function printReport() {
       <a-space>
         <a-button 
           size="small"
-          @click="toggleFavorite"
+          @click="handleToggleFavorite"
         >
           <template #icon>
             <StarTwoTone v-if="isFavorited" two-tone-color="#faad14" />
@@ -119,7 +109,7 @@ function printReport() {
           </template>
           {{ isFavorited ? '已收藏' : '收藏' }}
         </a-button>
-        <a-button size="small" type="primary" @click="exportPDF">
+        <a-button size="small" type="primary" @click="handleExportPdf">
           <template #icon><FilePdfOutlined /></template>创建PDF
         </a-button>
         <a-button size="small" @click="printReport">
