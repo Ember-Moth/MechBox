@@ -42,6 +42,7 @@ FERROBEND_NUT_SOURCES = [
 ]
 FERROBEND_WASHER_SOURCES = [
     ("https://iso-fasteners.com/iso-standard-washers/iso-7089/", "std_iso_7089", "rev_iso_7089_ferrobend", "dataset_iso_7089_ferrobend", "ISO 7089"),
+    ("https://boltport.com/standards/iso-7092/", "std_iso_7092", "rev_iso_7092_boltport", "dataset_iso_7092_boltport", "ISO 7092"),
     ("https://iso-fasteners.com/iso-standard-washers/iso-7090/", "std_iso_7090", "rev_iso_7090_ferrobend", "dataset_iso_7090_ferrobend", "ISO 7090"),
     ("https://iso-fasteners.com/iso-standard-washers/iso-7091/", "std_iso_7091", "rev_iso_7091_ferrobend", "dataset_iso_7091_ferrobend", "ISO 7091"),
     ("https://iso-fasteners.com/iso-standard-washers/iso-7093/", "std_iso_7093", "rev_iso_7093_ferrobend", "dataset_iso_7093_ferrobend", "ISO 7093"),
@@ -425,6 +426,12 @@ def import_nsk_catalog_bearings(conn: sqlite3.Connection):
         ("6012", 60, 95, 18, 32500, 23200),
         ("6212", 60, 110, 22, 57500, 36000),
         ("6312", 60, 130, 31, 90000, 52000),
+        ("6013", 65, 100, 18, 33500, 25200),
+        ("6213", 65, 120, 23, 63000, 40000),
+        ("6313", 65, 140, 33, 102000, 60000),
+        ("6014", 70, 110, 20, 42000, 31000),
+        ("6214", 70, 125, 24, 68500, 44000),
+        ("6314", 70, 150, 35, 115000, 68000),
         ("6015", 75, 115, 20, 43500, 33500),
         ("6215", 75, 130, 25, 73000, 49500),
         ("6016", 80, 125, 22, 52500, 40000),
@@ -806,8 +813,8 @@ def seed_data_version(conn: sqlite3.Connection):
     rows = [
         ("V3_SCHEMA", "3.0.0", "system", "schema_v3"),
         ("KHK_VENDOR", "2026-04-12", "khk_gear_world", f"urls:{len(KHK_URLS)}"),
-        ("NSK_PUBLIC_PDF", "2026-04-12", "nsk_catalog", "rows:43"),
-        ("FERROBEND_FASTENER", "2026-04-12", "ferrobend_iso", "iso4032+4034+7089+7090+7091+7093+boltport4035"),
+        ("NSK_PUBLIC_PDF", "2026-04-12", "nsk_catalog", "rows:54"),
+        ("FERROBEND_FASTENER", "2026-04-12", "ferrobend_iso", "iso4032+4034+7089+7090+7091+7093+boltport4035+boltport7092"),
     ]
     conn.executemany(
         """
