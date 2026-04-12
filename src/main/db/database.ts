@@ -79,25 +79,6 @@ export function initDatabase() {
     throw err;
   }
 
-  db.prepare(
-    `CREATE TABLE tolerance_it_grades (grade TEXT, size_index INTEGER, value INTEGER, PRIMARY KEY (grade, size_index))`,
-  ).run();
-  db.prepare(
-    `CREATE TABLE fundamental_deviations (type TEXT, position TEXT, size_index INTEGER, value INTEGER, PRIMARY KEY (type, position, size_index))`,
-  ).run();
-  db.prepare(
-    `CREATE TABLE oring_standards (standard TEXT, code TEXT, id REAL, cs REAL, PRIMARY KEY (standard, code))`,
-  ).run();
-  db.prepare(
-    `CREATE TABLE bearings_deep_groove (designation TEXT PRIMARY KEY, inner_diameter REAL, outer_diameter REAL, width REAL, C_r REAL, C_0r REAL, speed_limit_grease REAL, speed_limit_oil REAL, mass REAL)`,
-  ).run();
-  db.prepare(
-    `CREATE TABLE threads_iso_metric (designation TEXT PRIMARY KEY, d REAL, pitch REAL, d2 REAL, d1 REAL, stress_area REAL)`,
-  ).run();
-  db.prepare(
-    `CREATE TABLE bolts_hex (designation TEXT PRIMARY KEY, d REAL, head_width_s REAL, head_height_k REAL, standard TEXT)`,
-  ).run();
-
   // FTS5 全文搜索虚拟表 - 高性能模糊检索 (Section 2.3.1)
   db.prepare(
     `CREATE VIRTUAL TABLE IF NOT EXISTS bearings_fts USING fts5(designation, inner_diameter, outer_diameter, width, C_r, C_0r, content='bearings_deep_groove', content_rowid='rowid')`,
@@ -109,82 +90,86 @@ export function initDatabase() {
     `CREATE VIRTUAL TABLE IF NOT EXISTS threads_fts USING fts5(designation, d, pitch, d2, d1, stress_area, content='threads_iso_metric', content_rowid='rowid')`,
   ).run();
 
-  // 导入数据
-  const insertIT = db.prepare(
-    "INSERT INTO tolerance_it_grades (grade, size_index, value) VALUES (?, ?, ?)",
-  );
-  db.transaction((data) => {
-    for (const [grade, values] of Object.entries(data)) {
-      (values as number[]).forEach((val, idx) => insertIT.run(grade, idx, val));
-    }
-  })(iso286Data.it_grades);
-
-  const insertDev = db.prepare(
-    "INSERT INTO fundamental_deviations (type, position, size_index, value) VALUES (?, ?, ?, ?)",
-  );
-  db.transaction((data) => {
-    for (const [type, positions] of Object.entries(data)) {
-      for (const [pos, values] of Object.entries(positions as any)) {
-        (values as number[]).forEach((val, idx) =>
-          insertDev.run(type, pos, idx, val),
-        );
+  // 导入数据 (仅首次运行或数据版本变更时执行)
+  const needsDataImport = isFirstRun;
+  
+  if (needsDataImport) {
+    const insertIT = db.prepare(
+      "INSERT OR IGNORE INTO tolerance_it_grades (grade, size_index, value) VALUES (?, ?, ?)",
+    );
+    db.transaction((data) => {
+      for (const [grade, values] of Object.entries(data)) {
+        (values as number[]).forEach((val, idx) => insertIT.run(grade, idx, val));
       }
-    }
-  })(iso286Data.fundamental_deviations);
+    })(iso286Data.it_grades);
 
-  const insertOring = db.prepare(
-    "INSERT INTO oring_standards (standard, code, id, cs) VALUES (?, ?, ?, ?)",
-  );
-  db.transaction((data) => {
-    data.sizes.forEach((s: any) =>
-      insertOring.run(data.standard, s.code, s.id, s.cs),
+    const insertDev = db.prepare(
+      "INSERT OR IGNORE INTO fundamental_deviations (type, position, size_index, value) VALUES (?, ?, ?, ?)",
     );
-  })(as568Data);
+    db.transaction((data) => {
+      for (const [type, positions] of Object.entries(data)) {
+        for (const [pos, values] of Object.entries(positions as any)) {
+          (values as number[]).forEach((val, idx) =>
+            insertDev.run(type, pos, idx, val),
+          );
+        }
+      }
+    })(iso286Data.fundamental_deviations);
 
-  const insertBearing = db.prepare(
-    "INSERT INTO bearings_deep_groove (designation, inner_diameter, outer_diameter, width, C_r, C_0r, speed_limit_grease, speed_limit_oil, mass) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-  );
-  db.transaction((data) => {
-    data.bearings.forEach((b: any) =>
-      insertBearing.run(
-        b.designation,
-        b.d,
-        b.D,
-        b.B,
-        b.C_r,
-        b.C_0r,
-        b.speed_limit_grease,
-        b.speed_limit_oil,
-        b.mass,
-      ),
+    const insertOring = db.prepare(
+      "INSERT OR IGNORE INTO oring_standards (standard, code, id, cs) VALUES (?, ?, ?, ?)",
     );
-  })(deepGrooveData);
+    db.transaction((data) => {
+      data.sizes.forEach((s: any) =>
+        insertOring.run(data.standard, s.code, s.id, s.cs),
+      );
+    })(as568Data);
 
-  const insertThread = db.prepare(
-    "INSERT INTO threads_iso_metric (designation, d, pitch, d2, d1, stress_area) VALUES (?, ?, ?, ?, ?, ?)",
-  );
-  db.transaction((data) => {
-    data.threads.forEach((t: any) =>
-      insertThread.run(t.designation, t.d, t.pitch, t.d2, t.d1, t.stress_area),
+    const insertBearing = db.prepare(
+      "INSERT OR IGNORE INTO bearings_deep_groove (designation, inner_diameter, outer_diameter, width, C_r, C_0r, speed_limit_grease, speed_limit_oil, mass) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     );
-  })(isoMetricThreadsData);
+    db.transaction((data) => {
+      data.bearings.forEach((b: any) =>
+        insertBearing.run(
+          b.designation,
+          b.d,
+          b.D,
+          b.B,
+          b.C_r,
+          b.C_0r,
+          b.speed_limit_grease,
+          b.speed_limit_oil,
+          b.mass,
+        ),
+      );
+    })(deepGrooveData);
 
-  const insertBolt = db.prepare(
-    "INSERT INTO bolts_hex (designation, d, head_width_s, head_height_k, standard) VALUES (?, ?, ?, ?, ?)",
-  );
-  db.transaction((data) => {
-    data.bolts.forEach((b: any) =>
-      insertBolt.run(
-        b.designation,
-        b.d,
-        b.head_width_s,
-        b.head_height_k,
-        b.standard,
-      ),
+    const insertThread = db.prepare(
+      "INSERT OR IGNORE INTO threads_iso_metric (designation, d, pitch, d2, d1, stress_area) VALUES (?, ?, ?, ?, ?, ?)",
     );
-  })(hexBoltsData);
+    db.transaction((data) => {
+      data.threads.forEach((t: any) =>
+        insertThread.run(t.designation, t.d, t.pitch, t.d2, t.d1, t.stress_area),
+      );
+    })(isoMetricThreadsData);
 
-  // 记录系统标准数据版本
+    const insertBolt = db.prepare(
+      "INSERT OR IGNORE INTO bolts_hex (designation, d, head_width_s, head_height_k, standard) VALUES (?, ?, ?, ?, ?)",
+    );
+    db.transaction((data) => {
+      data.bolts.forEach((b: any) =>
+        insertBolt.run(
+          b.designation,
+          b.d,
+          b.head_width_s,
+          b.head_height_k,
+          b.standard,
+        ),
+      );
+    })(hexBoltsData);
+  }
+
+  // 记录系统标准数据版本 (每次启动都更新)
   const insertVersion = db.prepare(
     "INSERT OR REPLACE INTO data_version (standard_code, version, source, checksum) VALUES (?, ?, ?, ?)",
   );

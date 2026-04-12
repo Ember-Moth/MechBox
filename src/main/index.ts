@@ -188,7 +188,16 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   
   // Section 3: Start WebSocket server for CAD bidirectional sync
-  startWebSocketServer();
+  try {
+    startWebSocketServer();
+  } catch (err: any) {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`[WebSocket] Port 8321 in use, trying 8322...`);
+      try {
+        startWebSocketServer(8322);
+      } catch { /* ignore secondary failure */ }
+    }
+  }
 
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);

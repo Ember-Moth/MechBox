@@ -36,16 +36,16 @@ const handlers: Record<string, (params: any) => any> = {
   'ping': () => 'pong'
 }
 
-export function startWebSocketServer(): void {
+export function startWebSocketServer(port: number = 8321): void {
   if (wss) return
   
   wss = new WebSocketServer({ 
     host: '127.0.0.1', 
-    port: 8321 
+    port
   })
 
   wss.on('listening', () => {
-    console.log('[WebSocket Server] CAD sync server started on 127.0.0.1:8321')
+    console.log(`[WebSocket Server] CAD sync server started on 127.0.0.1:${port}`)
   })
 
   wss.on('connection', (ws: WebSocket) => {
