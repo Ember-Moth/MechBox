@@ -9,7 +9,9 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "test": "vitest",
-    "lint": "vue-tsc --noEmit"
+    "lint": "vue-tsc --noEmit",
+    "rust:build": "cd rust-core && cargo build --release && cp target/release/libmechbox_core.* ../out/native/",
+    "rust:debug": "cd rust-core && cargo build"
   },
   "dependencies": {
     "@ant-design/icons-vue": "*",
@@ -31,6 +33,7 @@
   "devDependencies": {
     "@electron-toolkit/utils": "*",
     "@electron/rebuild": "^4.0.3",
+    "@napi-rs/cli": "^3.6.1",
     "@types/better-sqlite3": "*",
     "@types/node": "*",
     "@vitejs/plugin-vue": "^5.2.4",
