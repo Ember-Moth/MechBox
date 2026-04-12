@@ -85,6 +85,15 @@ export const industrialCompactTheme = {
  * 工业风格CSS全局变量
  */
 export const industrialCSS = `
+html, body, #app {
+  min-height: 100%;
+}
+
+body {
+  background: #eef2f7;
+  color: #1e293b;
+}
+
 /* 全局字体 - 等宽字体用于数值显示 */
 .res-value, .number-display {
   font-family: 'JetBrains Mono', 'Courier New', monospace;
@@ -149,10 +158,56 @@ export const industrialCSS = `
   color: white;
 }
 
+/* 页面级结构基线 */
+.toolbar {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10);
+}
+
+.content-body {
+  background: #ffffff;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+
+.brand small {
+  font-weight: 500;
+  font-size: 11px;
+  opacity: 0.78;
+  margin-left: 8px;
+}
+
 /* 响应式断点调整 */
 @media (max-width: 1200px) {
   .responsive-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .content-body {
+    padding: 12px;
   }
 }
 `;

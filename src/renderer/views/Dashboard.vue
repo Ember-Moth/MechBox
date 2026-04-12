@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons-vue'
 
 const store = useStandardStore()
+const router = useRouter()
 
 const quickAccessModules = [
     { key: 'tolerances', icon: ColumnWidthOutlined, label: '公差配合', desc: 'ISO 286 公差查询与配合计算' },
@@ -23,8 +24,13 @@ const quickAccessModules = [
 ]
 
 function navigateTo(moduleKey: string) {
-    // Update parent's selectedKeys through event
-    window.dispatchEvent(new CustomEvent('navigate', { detail: { module: moduleKey } }))
+    void router.push(
+        moduleKey === 'tolerances' ? '/tolerances' :
+        moduleKey === 'seals' ? '/seals' :
+        moduleKey === 'bearings' ? '/bearings' :
+        moduleKey === 'bolts' ? '/bolts' :
+        '/',
+    )
 }
 </script>
 
@@ -110,12 +116,15 @@ function navigateTo(moduleKey: string) {
 }
 
 .welcome-banner {
-    background: linear-gradient(135deg, #004d40 0%, #00796b 100%);
+    background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 32%),
+        linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
     color: white;
-    padding: 32px 24px;
-    border-radius: 8px;
+    padding: 28px 24px;
+    border-radius: 12px;
     margin-bottom: 24px;
-    text-align: center;
+    text-align: left;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
 }
 
 .welcome-banner h1 {
@@ -137,12 +146,12 @@ function navigateTo(moduleKey: string) {
 
 .module-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
 }
 
 .module-icon {
     font-size: 32px;
-    color: #004d40;
+    color: #1e3a8a;
     text-align: center;
     margin-bottom: 12px;
 }
