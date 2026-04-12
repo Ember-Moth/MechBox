@@ -23,124 +23,53 @@ const histogramData = computed(() => {
   return simResult.value.histogram.map((h: any) => ({ ...h, height: (h.count / maxCount) * 100 }))
 })
 
+function createWorker(): Worker {
+  return new Worker(
+    new URL('../workers/monte-carlo.ts', import.meta.url),
+    { type: 'module' }
+  )
+}
+
 function runSimulation() {
   isRunning.value = true
   progress.value = 0
   errorMsg.value = ''
   simResult.value = null
-  
+
   // Kill previous worker
   worker?.terminate()
-  
-  const workerScript = `
-    onmessage = function(e) {
-      const { inputDistributions, numSamples, specLimits, computeType } = e.data
-      function randn() {
-        let u = 0, v = 0
-        while (u === 0) u = Math.random()
-        while (v === 0) v = Math.random()
-        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
-      }
-      function gen(p) {
-        const d = p.distribution || 'normal'
-        if (d === 'normal') return p.mean + p.stdDev * randn()
-        const mn = p.min ?? p.mean - p.stdDev * Math.sqrt(3)
-        const mx = p.max ?? p.mean + p.stdDev * Math.sqrt(3)
-        return mn + (mx - mn) * Math.random()
-      }
-      const samples = [], names = Object.keys(inputDistributions)
-      let skipped = 0
-      for (let i = 0; i < numSamples; i++) {
-        const p = {}
-        for (const n of names) p[n] = gen(inputDistributions[n])
-        if (computeType === 'bearing') {
-          // 保护：Fr 和 speed 必须为正
-          const Fr = Math.max(p.Fr, 0.01)
-          const speed = Math.max(p.speed, 10)
-          const P = 0.56 * Fr
-          if (P > 0.01 && p.C_r > 0) {
-            const L10 = Math.pow(p.C_r / P, 3)
-            const L10h = (1000000 / (60 * speed)) * L10
-            if (L10h > 0 && isFinite(L10h)) samples.push(L10h)
-            else skipped++
-          } else {
-            skipped++
-          }
-        } else {
-          let s = 0
-          for (const n of names) s += p[n]
-          if (isFinite(s)) samples.push(s)
-          else skipped++
-        }
-        if (i % 5000 === 0) postMessage({ progress: i / numSamples * 100 })
-      }
-      if (samples.length === 0) {
-        postMessage({ done: true, error: '无有效样本，请检查参数 (跳过 ' + skipped + ' 次)', validSamples: 0 })
-        return
-      }
-      const sorted = [...samples].sort((a, b) => a - b)
-      const mean = sorted.reduce((s, v) => s + v, 0) / sorted.length
-      const variance = sorted.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / sorted.length
-      const stdDev = Math.sqrt(variance)
-      let yld = 100
-      if (specLimits) {
-        const w = sorted.filter(v => v >= specLimits.lower && v <= specLimits.upper)
-        yld = (w.length / sorted.length) * 100
-      }
-      const bins = 50
-      const range = sorted[sorted.length - 1] - sorted[0]
-      const bw = range > 0 ? range / bins : 1
-      const hist = []
-      for (let i = 0; i < bins; i++) {
-        const bs = sorted[0] + i * bw
-        hist.push({ bin: bs, count: sorted.filter(v => v >= bs && v < bs + bw).length })
-      }
-      postMessage({
-        done: true,
-        mean, stdDev,
-        min: sorted[0],
-        max: sorted[sorted.length - 1],
-        p5: sorted[Math.floor(sorted.length * 0.05)],
-        p95: sorted[Math.floor(sorted.length * 0.95)],
-        p99: sorted[Math.floor(sorted.length * 0.99)],
-        yield: yld,
-        histogram: hist,
-        validSamples: samples.length,
-        skipped
-      })
-    }
-  `
-  const blob = new Blob([workerScript], { type: 'application/javascript' })
-  worker = new Worker(URL.createObjectURL(blob))
-  
-  worker.onmessage = function(e) {
-    if (e.data.done) {
-      if (e.data.error) {
-        errorMsg.value = e.data.error
+
+  worker = createWorker()
+
+  worker.onmessage = function(e: MessageEvent) {
+    const data = e.data
+    if (data.done) {
+      if (data.error) {
+        errorMsg.value = data.error
         simResult.value = {
           mean: 0, stdDev: 0, min: 0, max: 0, p5: 0, p95: 0, p99: 0,
           yield: 0, histogram: [], validSamples: 0
         }
       } else {
-        simResult.value = e.data
-        if (e.data.skipped > 0) {
-          errorMsg.value = `注意: 跳过了 ${e.data.skipped} 次无效计算 (参数超限)`
+        simResult.value = data
+        if (data.skipped > 0) {
+          errorMsg.value = `注意: 跳过了 ${data.skipped} 次无效计算 (参数超限)`
         }
       }
       isRunning.value = false
       progress.value = 100
       worker?.terminate()
-    } else if (e.data.progress !== undefined) {
-      progress.value = e.data.progress
+    } else if (data.progress !== undefined) {
+      progress.value = data.progress
     }
   }
-  
-  worker.onerror = function(e) {
-    errorMsg.value = 'Worker 错误: ' + e.message
+
+  worker.onerror = function(e: ErrorEvent) {
+    errorMsg.value = `Worker 错误: ${e.message || '未知错误'}`
     isRunning.value = false
     worker?.terminate()
   }
-  
+
   if (simType.value === 'bearing-life') {
     worker.postMessage({
       computeType: 'bearing',
@@ -253,12 +182,8 @@ onUnmounted(() => worker?.terminate())
           </a-card>
         </a-col>
         <a-col :span="14">
-          <!-- 错误/警告信息 -->
           <a-alert v-if="errorMsg" :message="errorMsg" :type="simResult?.validSamples === 0 ? 'error' : 'warning'" show-icon style="margin-bottom: 12px"/>
-          
-          <!-- 进度条 -->
           <a-progress v-if="isRunning" :percent="Math.round(progress)" status="active" style="margin-bottom: 12px"/>
-          
           <a-empty v-if="!simResult" description="请设置参数后点击运行"/>
           <div v-else>
             <a-card title="统计结果" size="small">

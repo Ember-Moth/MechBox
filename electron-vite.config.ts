@@ -21,5 +21,8 @@ export default defineConfig({
       include: ['jspdf', 'html2canvas'],
       exclude: ['@renderer/engine'],
     },
+    worker: {
+      format: 'es'
+    },
   },
 });
