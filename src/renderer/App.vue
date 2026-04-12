@@ -64,6 +64,26 @@ import { industrialCompactTheme } from "./themes/industrial-compact";
 const collapsed = ref(false);
 const selectedKeys = ref(["dashboard"]);
 
+const routeMap: Record<string, string> = {
+    dashboard: '/', tolerances: '/tolerances', seals: '/seals',
+    bearings: '/bearings', bolts: '/bolts', drives: '/drives',
+    gears: '/gears', springs: '/springs', hydraulics: '/hydraulics',
+    motors: '/motors', shafts: '/shafts', units: '/units',
+    materials: '/materials', 'standard-parts': '/standard-parts',
+    'reverse-identify': '/reverse-identify', 'material-sub': '/material-sub',
+    'param-scan': '/param-scan', 'monte-carlo': '/monte-carlo',
+    dfm: '/dfm', 'failure-diag': '/failure-diag',
+    'excel-import': '/excel-import', 'latex-report': '/latex-report',
+    projects: '/projects', reports: '/reports',
+    favorites: '/favorites', 'bom-export': '/bom-export',
+    settings: '/settings', about: '/about',
+};
+
+function navigateTo(key: string) {
+    const path = routeMap[key];
+    if (path) window.location.hash = '#' + path;
+}
+
 // Section 4.3.3: Semantic folder groups (replaces flat menu with dividers)
 const menuGroups = [
     {
@@ -157,7 +177,7 @@ onUnmounted(() => {
                 <div class="menu-scroll">
                     <!-- Dashboard as first standalone item -->
                     <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
-                        <a-menu-item key="dashboard">
+                        <a-menu-item key="dashboard" @click="navigateTo('dashboard')">
                             <template #icon><DashboardOutlined /></template>
                             <span>工作台</span>
                         </a-menu-item>
@@ -166,7 +186,7 @@ onUnmounted(() => {
                         <a-sub-menu v-for="group in menuGroups" :key="group.key">
                             <template #icon><component :is="group.icon" /></template>
                             <template #title>{{ group.title }}</template>
-                            <a-menu-item v-for="item in group.children" :key="item.key">
+                            <a-menu-item v-for="item in group.children" :key="item.key" @click="navigateTo(item.key)">
                                 <template #icon><component :is="item.icon" /></template>
                                 <span>{{ item.label }}</span>
                             </a-menu-item>
@@ -203,91 +223,7 @@ onUnmounted(() => {
                             borderRadius: '8px',
                         }"
                     >
-                        <div v-if="selectedKeys[0] === 'dashboard'">
-                            <Dashboard />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'tolerances'">
-                            <TolerancesPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'seals'">
-                            <SealsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'bearings'">
-                            <BearingsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'bolts'">
-                            <BoltsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'drives'">
-                            <DrivesPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'gears'">
-                            <GearsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'springs'">
-                            <SpringsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'hydraulics'">
-                            <HydraulicsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'motors'">
-                            <MotorsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'shafts'">
-                            <ShaftsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'units'">
-                            <UnitConverterPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'materials'">
-                            <MaterialLibraryPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'standard-parts'">
-                            <StandardPartsLibraryPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'param-scan'">
-                            <ParamScanPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'monte-carlo'">
-                            <MonteCarloPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'dfm'">
-                            <DFMAnalysisPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'failure-diag'">
-                            <FailureDiagnosisPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'projects'">
-                            <ProjectCenterPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'reports'">
-                            <ReportCenterPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'settings'">
-                            <SettingsPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'favorites'">
-                            <FavoritesPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'bom-export'">
-                            <BOMExportPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'reverse-identify'">
-                            <ReverseIdentifyPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'material-sub'">
-                            <MaterialSubstitutionPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'excel-import'">
-                            <ExcelImportPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'latex-report'">
-                            <LaTeXReportPage />
-                        </div>
-                        <div v-else-if="selectedKeys[0] === 'about'">
-                            <AboutPage />
-                        </div>
-                        <div v-else>正在构建 {{ selectedKeys[0] }} 模块...</div>
+                        <router-view />
                     </div>
                 </a-layout-content>
             </a-layout>
