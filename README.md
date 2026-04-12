@@ -4,7 +4,7 @@
 [![Vue](https://img.shields.io/badge/Vue-3.x-4fc08d?logo=vuedotjs)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript)](https://www.typescriptlang.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-3.x-003B57?logo=sqlite)](https://www.sqlite.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 
 > **"告别 Excel 与散落的手册，打造断网环境下绝对可靠的离线桌面指挥中心。"**
 
@@ -103,7 +103,9 @@ MechBox 的目标是打破大厂的信息壁垒与高昂订阅费。无论你是
 
 ## 📄 开源协议
 
-本项目采用 [MIT License](LICENSE)。完全开源免费，商业友好。
+本项目采用 [GNU General Public License v3.0 (GPL-3.0)](LICENSE)。
+允许个人与开源社区免费使用与二次开发。**任何包含或修改了本项目代码的衍生软件（无论是实体分发还是网络服务），必须同样以 GPL-3.0 协议开源其完整源代码**。
+如需将本软件或其核心算法集成于闭源商业软件中，请联系作者获取双重授权。
 
 ---
 
