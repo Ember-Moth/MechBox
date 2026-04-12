@@ -18,6 +18,7 @@ INSERT OR IGNORE INTO source_provider (
   ('asme', 'ASME Standards', 'purchased_standard', 'https://www.asme.org/', 5, 'B18 系列标准'),
   ('agma', 'AGMA Standards', 'purchased_standard', 'https://www.agma.org/standards-technology/', 5, '齿轮标准'),
   ('abma', 'ABMA Standards', 'purchased_standard', 'https://americanbearings.org/industry-standards/', 5, '轴承标准'),
+  ('gmors_catalog', 'GMORS Catalog', 'vendor_catalog', 'https://www.gmors.com/', 4, '公开 O-Ring 标准尺寸 PDF'),
   ('khk_gear_world', 'KHK Gear World', 'vendor_catalog', 'https://www.khkgears.us/', 4, '齿轮商品目录'),
   ('nsk_catalog', 'NSK Catalogs and CAD', 'vendor_catalog', 'https://www.nsk.com/catalogs-and-cad/', 4, '轴承商品目录'),
   ('boltport', 'Boltport Fasteners', 'reference_db', 'https://boltport.com/standards/', 3, '公开紧固件尺寸参考页'),
@@ -32,6 +33,7 @@ INSERT OR IGNORE INTO standard_document (
   standard_id, system_code, standard_number, title, domain_code, status, notes
 ) VALUES
   ('std_as568', 'SAE', 'AS568', 'Aerospace Size Standard for O-Rings', 'seal', 'active', 'O 型圈尺寸标准'),
+  ('std_jis_b_2401', 'JIS', 'B 2401', 'O-Ring Standard Size', 'seal', 'active', 'JIS O 型圈尺寸标准'),
   ('std_iso_261', 'ISO', '261', 'ISO general purpose metric screw threads', 'thread', 'active', '公制螺纹'),
   ('std_iso_4032', 'ISO', '4032', 'Hexagon regular nuts', 'fastener', 'active', '六角螺母'),
   ('std_iso_4034', 'ISO', '4034', 'Hexagon nuts, product grade C', 'fastener', 'active', '六角螺母 C级'),
@@ -53,6 +55,7 @@ INSERT OR IGNORE INTO standard_revision (
   source_id, source_url, copyright_class, notes
 ) VALUES
   ('rev_as568f', 'std_as568', 'AS568F', 'AS568F', '2026-01-29', '2026-01-29', 'sae_mobilus', 'https://saemobilus.sae.org/standards/as568f-aerospace-size-standard-o-rings', 'licensed_internal', '官方页显示 2026-01-29 reaffirmed'),
+  ('rev_jis_b_2401_gmors', 'std_jis_b_2401', 'gmors', 'gmors', NULL, NULL, 'gmors_catalog', 'https://www.gmors.com/files/CatalogDownload/file/Ya/gmors-o-ring-jisb-2401.pdf', 'vendor_reference', 'GMORS 公开 PDF 尺寸参考页'),
   ('rev_iso_261_default', 'std_iso_261', 'default', 'default', NULL, NULL, 'iso', 'https://www.iso.org/', 'restricted', '项目初始化占位版本'),
   ('rev_iso_4032_ferrobend', 'std_iso_4032', 'ferrobend', 'ferrobend', NULL, NULL, 'ferrobend_iso', 'https://iso-fasteners.com/iso-standard-nuts/iso-4032/', 'vendor_reference', '公开尺寸参考页'),
   ('rev_iso_4034_ferrobend', 'std_iso_4034', 'ferrobend', 'ferrobend', NULL, NULL, 'ferrobend_iso', 'https://iso-fasteners.com/iso-standard-nuts/iso-4034/', 'vendor_reference', '公开尺寸参考页'),
@@ -73,6 +76,7 @@ INSERT OR IGNORE INTO dataset_release (
   dataset_id, dataset_name, dataset_version, source_id, revision_id, checksum, row_count, notes
 ) VALUES
   ('dataset_threads_iso_metric_json', 'ISO Metric Threads JSON', '1.0.0', 'iso', 'rev_iso_261_default', NULL, NULL, '仓库内置 JSON'),
+  ('dataset_jis_b2401_gmors_pdf', 'JIS B 2401 GMORS PDF', '2026-04-12', 'gmors_catalog', 'rev_jis_b_2401_gmors', NULL, NULL, '公开 PDF 抽取'),
   ('dataset_iso_4032_ferrobend', 'ISO 4032 FERROBEND', '2026-04-12', 'ferrobend_iso', 'rev_iso_4032_ferrobend', NULL, NULL, '公开网页抽取'),
   ('dataset_iso_4034_ferrobend', 'ISO 4034 FERROBEND', '2026-04-12', 'ferrobend_iso', 'rev_iso_4034_ferrobend', NULL, NULL, '公开网页抽取'),
   ('dataset_iso_4035_boltport', 'ISO 4035 BOLTPORT', '2026-04-12', 'boltport', 'rev_iso_4035_boltport', NULL, NULL, '公开网页抽取'),

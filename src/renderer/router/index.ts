@@ -4,6 +4,7 @@ import type { RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'Dashboard', component: () => import('../views/Dashboard.vue') },
   { path: '/tolerances', name: 'Tolerances', component: () => import('../views/tolerances/TolerancesPage.vue') },
+  { path: '/tolerance-stack', name: 'ToleranceStack', component: () => import('../views/ToleranceStackPage.vue') },
   { path: '/seals', name: 'Seals', component: () => import('../views/seals/SealsPage.vue') },
   { path: '/bearings', name: 'Bearings', component: () => import('../views/bearings/BearingsPage.vue') },
   { path: '/bolts', name: 'Bolts', component: () => import('../views/bolts/BoltsPage.vue') },

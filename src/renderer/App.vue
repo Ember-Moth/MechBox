@@ -33,6 +33,7 @@ import {
 import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
 import TolerancesPage from "./views/tolerances/TolerancesPage.vue";
+import ToleranceStackPage from "./views/ToleranceStackPage.vue";
 import SealsPage from "./views/seals/SealsPage.vue";
 import BearingsPage from "./views/bearings/BearingsPage.vue";
 import BoltsPage from "./views/bolts/BoltsPage.vue";
@@ -65,7 +66,7 @@ const collapsed = ref(false);
 const selectedKeys = ref(["dashboard"]);
 
 const routeMap: Record<string, string> = {
-    dashboard: '/', tolerances: '/tolerances', seals: '/seals',
+    dashboard: '/', tolerances: '/tolerances', 'tolerance-stack': '/tolerance-stack', seals: '/seals',
     bearings: '/bearings', bolts: '/bolts', drives: '/drives',
     gears: '/gears', springs: '/springs', hydraulics: '/hydraulics',
     motors: '/motors', shafts: '/shafts', units: '/units',
@@ -92,6 +93,7 @@ const menuGroups = [
         title: "基础设计与选型",
         children: [
             { key: "tolerances", icon: ColumnWidthOutlined, label: "公差配合" },
+            { key: "tolerance-stack", icon: ColumnWidthOutlined, label: "公差堆叠分析" },
             { key: "seals", icon: BlockOutlined, label: "密封圈" },
             { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
             { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },

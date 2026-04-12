@@ -4,6 +4,7 @@ import re
 import sqlite3
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -12,6 +13,7 @@ DATA_DIR = REPO_ROOT / "data"
 DB_PATH = DATA_DIR / "mechbox.db"
 SCHEMA_PATH = REPO_ROOT / "DOC" / "schema_v3.sql"
 SEED_PATH = REPO_ROOT / "DOC" / "seed_sources_v3.sql"
+GMORS_JIS_B2401_PDF_URL = "https://www.gmors.com/files/CatalogDownload/file/Ya/gmors-o-ring-jisb-2401.pdf"
 
 KHK_URLS = [
     "https://www.khkgears.us/catalog/product/SSG1-20",
@@ -95,6 +97,42 @@ def fetch_text(url: str) -> str:
         text=True,
     )
     return result.stdout
+
+
+def fetch_pdf_text(url: str) -> str:
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        subprocess.run(
+            [
+                "curl",
+                "-L",
+                "--silent",
+                "--show-error",
+                "--retry",
+                "3",
+                "--retry-all-errors",
+                "--retry-delay",
+                "2",
+                "--max-time",
+                "60",
+                "-o",
+                str(tmp_path),
+                url,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        result = subprocess.run(
+            ["pdftotext", str(tmp_path), "-"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 def parse_khk_page(html: str, url: str):
@@ -530,6 +568,70 @@ def import_orings(conn: sqlite3.Connection):
     )
 
 
+def import_jis_b2401_orings(conn: sqlite3.Connection):
+    text = fetch_pdf_text(GMORS_JIS_B2401_PDF_URL)
+    lines = [line.strip() for line in text.splitlines()]
+    size_pattern = re.compile(r"^[PGSV]\d+(?:\.\d+)?[A-Z]?$")
+    number_pattern = re.compile(r"^\d+(?:\.\d+)?$")
+
+    rows = []
+    for index, line in enumerate(lines):
+        if not size_pattern.match(line):
+            continue
+        values = []
+        cursor = index + 1
+        while cursor < len(lines) and len(values) < 4:
+            candidate = lines[cursor]
+            if number_pattern.fullmatch(candidate):
+                values.append(float(candidate))
+            elif size_pattern.match(candidate):
+                break
+            cursor += 1
+        if len(values) != 4:
+            continue
+
+        dash_code, inner_diameter, tol_id, cross_section, tol_cs = line, values[0], values[1], values[2], values[3]
+        rows.append(
+            (
+                f"oring_jis_b2401_{slugify(dash_code)}",
+                "std_jis_b_2401",
+                "rev_jis_b_2401_gmors",
+                dash_code,
+                inner_diameter,
+                cross_section,
+                tol_id,
+                tol_id,
+                tol_cs,
+                tol_cs,
+                dash_code[0],
+                "dataset_jis_b2401_gmors_pdf",
+                "Imported from GMORS JIS B 2401 public PDF",
+            )
+        )
+
+    if not rows:
+        raise RuntimeError("no JIS B 2401 O-ring rows imported")
+
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO seal_oring_size
+        (oring_id, standard_id, revision_id, dash_code, inner_diameter, cross_section,
+         tolerance_id_plus, tolerance_id_minus, tolerance_cs_plus, tolerance_cs_minus,
+         series_code, dataset_id, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        rows,
+    )
+    conn.execute(
+        """
+        UPDATE dataset_release
+        SET row_count = ?
+        WHERE dataset_id = 'dataset_jis_b2401_gmors_pdf'
+        """,
+        (len(rows),),
+    )
+
+
 def import_materials(conn: sqlite3.Connection):
     data = load_json(REPO_ROOT / "data" / "materials-extended.json")
     for family, materials in data.items():
@@ -812,6 +914,7 @@ def rebuild_search(conn: sqlite3.Connection):
 def seed_data_version(conn: sqlite3.Connection):
     rows = [
         ("V3_SCHEMA", "3.0.0", "system", "schema_v3"),
+        ("JIS_B2401_GMORS", "2026-04-12", "gmors_catalog", "rows:419"),
         ("KHK_VENDOR", "2026-04-12", "khk_gear_world", f"urls:{len(KHK_URLS)}"),
         ("NSK_PUBLIC_PDF", "2026-04-12", "nsk_catalog", "rows:54"),
         ("FERROBEND_FASTENER", "2026-04-12", "ferrobend_iso", "iso4032+4034+7089+7090+7091+7093+boltport4035+boltport7092"),
@@ -859,6 +962,7 @@ def main():
     import_bearings(conn)
     import_nsk_catalog_bearings(conn)
     import_orings(conn)
+    import_jis_b2401_orings(conn)
     import_materials(conn)
     import_seed_gear_modules(conn)
     import_khk_vendor_parts(conn)
