@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "*",
+    "@types/three": "^0.183.1",
+    "@types/ws": "^8.18.1",
     "ajv": "^8.18.0",
     "ant-design-vue": "*",
     "better-sqlite3": "*",
@@ -20,8 +22,10 @@
     "html2canvas": "*",
     "jspdf": "*",
     "pinia": "*",
+    "three": "^0.183.2",
     "vue": "*",
     "vue-router": "*",
+    "ws": "^8.20.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

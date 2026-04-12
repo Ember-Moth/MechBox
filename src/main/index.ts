@@ -3,6 +3,7 @@ import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { initDatabase, getDatabase } from "./db/database";
 import { parseExcel, generateTemplate } from "./services/excel-import";
+import { startWebSocketServer, stopWebSocketServer } from "./services/websocket-server";
 
 let db: any;
 
@@ -185,6 +186,9 @@ app.whenReady().then(() => {
   // 初始化数据库
   db = initDatabase();
   registerIpcHandlers();
+  
+  // Section 3: Start WebSocket server for CAD bidirectional sync
+  startWebSocketServer();
 
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
@@ -202,4 +206,5 @@ app.on("window-all-closed", () => {
     app.quit();
   }
   if (db) db.close();
+  stopWebSocketServer();
 });

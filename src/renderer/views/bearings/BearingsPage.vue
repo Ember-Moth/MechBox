@@ -5,6 +5,7 @@ import { calcLife, calcEquivalentLoad } from '../../engine/bearings/life'
 import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import Preview3D from '../../components/Preview3D.vue'
 
 const store = useStandardStore()
 const isFavorited = ref(false)
@@ -145,6 +146,10 @@ function printReport() {
               <a-descriptions-item label="脂润滑极限">{{ selectedBearing.speed_limit_grease }} rpm</a-descriptions-item>
               <a-descriptions-item label="油润滑极限">{{ selectedBearing.speed_limit_oil }} rpm</a-descriptions-item>
             </a-descriptions>
+
+            <!-- Section 4.1: 3D parameterized visualization -->
+            <a-divider>3D 参数预览</a-divider>
+            <Preview3D type="bearing" :params="{ d: selectedBearing.inner_diameter, D: selectedBearing.outer_diameter, B: selectedBearing.width }" />
 
             <a-divider />
 
