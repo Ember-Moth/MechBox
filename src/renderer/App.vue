@@ -256,29 +256,29 @@ onUnmounted(() => {
     overflow-x: hidden;
 }
 
-/* 增大侧边栏字号 - Section 4.3.3 UX 优化 */
+/* 侧边栏字号优化 - 紧凑工业风格 */
 .menu-scroll :deep(.ant-menu-item) {
-    font-size: 15px !important;
-    height: 42px !important;
-    line-height: 42px !important;
+    font-size: 13px !important;
+    height: 36px !important;
+    line-height: 36px !important;
 }
 
 .menu-scroll :deep(.ant-menu-submenu-title) {
-    font-size: 16px !important;
-    height: 44px !important;
-    line-height: 44px !important;
+    font-size: 14px !important;
+    height: 38px !important;
+    line-height: 38px !important;
     font-weight: bold !important;
 }
 
 .menu-scroll :deep(.ant-menu-sub .ant-menu-item) {
-    font-size: 14px !important;
-    height: 38px !important;
-    line-height: 38px !important;
+    font-size: 12px !important;
+    height: 32px !important;
+    line-height: 32px !important;
     font-weight: normal !important;
 }
 
 .menu-scroll :deep(.ant-menu-item .anticon) {
-    font-size: 18px !important;
+    font-size: 14px !important;
 }
 
 .menu-scroll::-webkit-scrollbar {
