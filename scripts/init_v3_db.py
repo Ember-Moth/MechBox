@@ -180,6 +180,12 @@ def import_bearings(conn: sqlite3.Connection):
     data = load_json(REPO_ROOT / "data" / "standards" / "bearings" / "deep-groove.json")
     rows = []
     for b in data["bearings"]:
+        dynamic_load = b.get("C_r")
+        static_load = b.get("C_0r")
+        if dynamic_load is not None and dynamic_load < 1000:
+            dynamic_load = dynamic_load * 1000
+        if static_load is not None and static_load < 1000:
+            static_load = static_load * 1000
         rows.append(
             (
                 f"bearing_{b['designation']}",
@@ -190,8 +196,8 @@ def import_bearings(conn: sqlite3.Connection):
                 b["d"],
                 b["D"],
                 b["B"],
-                b.get("C_r"),
-                b.get("C_0r"),
+                dynamic_load,
+                static_load,
                 b.get("speed_limit_grease"),
                 b.get("speed_limit_oil"),
                 b.get("mass"),
@@ -206,6 +212,80 @@ def import_bearings(conn: sqlite3.Connection):
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         rows,
+    )
+
+
+def import_nsk_catalog_bearings(conn: sqlite3.Connection):
+    rows = [
+        ("6000", 10, 26, 8, 5100, 2360),
+        ("6200", 10, 30, 9, 5100, 2390),
+        ("6300", 10, 35, 11, 8900, 3450),
+        ("6001", 12, 28, 8, 5600, 2370),
+        ("6201", 12, 32, 10, 7500, 3050),
+        ("6301", 12, 37, 12, 10700, 4200),
+        ("6002", 15, 32, 9, 6150, 2830),
+        ("6202", 15, 35, 11, 8400, 3750),
+        ("6302", 15, 42, 13, 12600, 5450),
+        ("6003", 17, 35, 10, 6600, 3250),
+        ("6203", 17, 40, 12, 10500, 4800),
+        ("6303", 17, 47, 14, 15000, 6650),
+        ("6004", 20, 42, 12, 10300, 5000),
+        ("6204", 20, 47, 14, 14100, 6600),
+        ("6304", 20, 52, 15, 17500, 7900),
+        ("6306", 30, 72, 19, 29300, 15000),
+    ]
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO bearing_basic
+        (bearing_id, standard_id, revision_id, designation, bearing_type, inner_diameter, outer_diameter, width,
+         dynamic_load_rating, static_load_rating, dataset_id, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            (
+                f"bearing_{designation}",
+                "std_iso_281",
+                "rev_iso_281_default",
+                designation,
+                "deep_groove_ball",
+                inner_diameter,
+                outer_diameter,
+                width,
+                dynamic_load,
+                static_load,
+                "dataset_nsk_deep_groove_pdf",
+                "Imported from NSK public deep groove bearing PDF catalog",
+            )
+            for designation, inner_diameter, outer_diameter, width, dynamic_load, static_load in rows
+        ],
+    )
+
+    variant_rows = []
+    for designation, _, _, _, _, _ in rows:
+        for suffix in ["ZZ", "DDU", "VV"]:
+            variant_rows.append(
+                (
+                    f"vendor_nsk_{slugify(f'{designation} {suffix}')}",
+                    "mfr_nsk",
+                    "bearing",
+                    f"{designation} {suffix}",
+                    "bearing_basic",
+                    f"bearing_{designation}",
+                    None,
+                    "active",
+                    f"NSK {designation} {suffix} deep groove ball bearing",
+                    "dataset_nsk_deep_groove_pdf",
+                )
+            )
+
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO vendor_part
+        (vendor_part_id, manufacturer_id, domain_code, vendor_part_number, linked_entity_type, linked_entity_id,
+         product_url, status, description, dataset_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        variant_rows,
     )
 
 
@@ -507,6 +587,7 @@ def seed_data_version(conn: sqlite3.Connection):
     rows = [
         ("V3_SCHEMA", "3.0.0", "system", "schema_v3"),
         ("KHK_VENDOR", "2026-04-12", "khk_gear_world", f"urls:{len(KHK_URLS)}"),
+        ("NSK_PUBLIC_PDF", "2026-04-12", "nsk_catalog", "rows:16"),
     ]
     conn.executemany(
         """
@@ -547,6 +628,7 @@ def main():
     import_threads(conn)
     import_bolts(conn)
     import_bearings(conn)
+    import_nsk_catalog_bearings(conn)
     import_orings(conn)
     import_materials(conn)
     import_seed_gear_modules(conn)

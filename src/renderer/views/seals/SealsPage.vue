@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useStandardStore } from "../../store/useStandardStore";
 import { calcCompression, calcStretch } from "../../engine/seals/oring";
+import { calcSealMultiPhysics } from "../../engine/seals/multi-physics";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import {
@@ -133,7 +134,21 @@ const results = computed(() => {
     const fillRate =
         ((Math.PI * Math.pow(cs / 2, 2)) / (depth * form.value.b1)) * 100;
 
-    return { compression: comp, stretch: str, clearance, fillRate };
+    // 多场耦合计算 (Section 10.1)
+    const multiPhysics = calcSealMultiPhysics({
+        cs,
+        id: form.value.d1,
+        grooveDepth: depth,
+        grooveWidth: form.value.b1,
+        clearance,
+        temperature: form.value.temperature || 20,
+        pressure: form.value.pressure || 0,
+        material: form.value.material || 'NBR',
+        medium: form.value.medium || 'mineral_oil',
+        application: isStatic.value ? 'static' : 'reciprocating'
+    });
+
+    return { compression: comp, stretch: str, clearance, fillRate, multiPhysics };
 });
 
 // 偏心/极限工况计算
@@ -670,6 +685,26 @@ const svgScale = computed(() => {
                                     </div>
                                 </a-col>
                             </a-row>
+                            
+                            <!-- Section 10.1: 多场耦合计算结果 -->
+                            <a-divider>热-力-化多场耦合校核</a-divider>
+                            <div class="result-grid">
+                                <div class="res-label">修正后压缩率 [%]</div>
+                                <div class="res-value" :class="{ error: results.multiPhysics.value.adjustedCompression > 35 || results.multiPhysics.value.adjustedCompression < 10 }">
+                                    {{ results.multiPhysics.value.adjustedCompression.toFixed(1) }} %
+                                </div>
+                                <div class="res-label">热膨胀量 [mm]</div>
+                                <div class="res-value">{{ results.multiPhysics.value.thermalExpansion.toFixed(3) }}</div>
+                                <div class="res-label">介质溶胀率 [%]</div>
+                                <div class="res-value">{{ results.multiPhysics.value.swellingVolume.toFixed(1) }} %</div>
+                                <div class="res-label">槽满率 [%]</div>
+                                <div class="res-value" :class="{ error: results.multiPhysics.value.fillRate > 100 }">{{ results.multiPhysics.value.fillRate.toFixed(1) }} %</div>
+                                <div class="res-label">挤出风险</div>
+                                <div class="res-value" :class="{ error: results.multiPhysics.value.extrusionRisk }">
+                                    {{ results.multiPhysics.value.extrusionRisk ? '⚠️ 有风险' : '✓ 安全' }}
+                                </div>
+                            </div>
+                            <a-alert v-for="(w,i) in results.multiPhysics.value.warnings" :key="i" :message="w.message" :type="w.level==='error'?'error':w.level==='warning'?'warning':'info'" show-icon style="margin-top:12px"/>
                         </div>
                     </div>
                 </a-col>

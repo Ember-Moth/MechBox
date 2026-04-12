@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
  * GearsPage.vue - 齿轮计算页面
- * 渐开线圆柱齿轮几何计算
+ * 渐开线圆柱齿轮几何计算 + ISO 6336 强度校核
  */
 import { ref, computed } from 'vue'
 import { calcGearGeometry, recommendModule, standardModules } from '@renderer/engine/gears/geometry'
+import { calcGearISO6336 } from '@renderer/engine/gears/iso6336'
 import { FilePdfOutlined } from '@ant-design/icons-vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -17,10 +18,14 @@ const params = ref({
   helixAngle: 0,
   x1: 0,
   x2: 0,
-  faceWidth: 20
+  faceWidth: 20,
+  torque1: 50,
+  sigmaHlim: 1500,
+  sigmaFlim: 400
 })
 
 const result = computed(() => calcGearGeometry(params.value))
+const iso6336Result = computed(() => calcGearISO6336(params.value))
 
 function recommend() {
   const a = params.value.module * (params.value.teeth1 + params.value.teeth2) / 2
@@ -88,6 +93,23 @@ async function exportPDF() {
               <a-descriptions-item label="重合度 ε">{{ result.value.contactRatio.toFixed(3) }}</a-descriptions-item>
             </a-descriptions>
             <a-alert v-for="(w,i) in result.value.warnings" :key="i" :message="w.message" :type="w.level==='error'?'error':w.level==='warning'?'warning':'info'" show-icon style="margin-top:12px"/>
+            
+            <!-- ISO 6336 强度校核 (Section 10.4) -->
+            <a-divider>ISO 6336 强度校核</a-divider>
+            <a-descriptions bordered size="small" :column="2">
+              <a-descriptions-item label="切向力 Ft">{{ iso6336Result.value.Ft.toFixed(0) }} N</a-descriptions-item>
+              <a-descriptions-item label="接触应力 σH">{{ iso6336Result.value.sigmaH.toFixed(1) }} MPa</a-descriptions-item>
+              <a-descriptions-item label="小齿轮弯曲应力 σF1">{{ iso6336Result.value.sigmaF1.toFixed(1) }} MPa</a-descriptions-item>
+              <a-descriptions-item label="大齿轮弯曲应力 σF2">{{ iso6336Result.value.sigmaF2.toFixed(1) }} MPa</a-descriptions-item>
+              <a-descriptions-item label="接触安全系数 SH">
+                <a-tag :color="iso6336Result.value.SH >= 1.5 ? 'green' : (iso6336Result.value.SH >= 1.0 ? 'orange' : 'red')">{{ iso6336Result.value.SH.toFixed(2) }}</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="弯曲安全系数 SF1">
+                <a-tag :color="iso6336Result.value.SF1 >= 2.0 ? 'green' : (iso6336Result.value.SF1 >= 1.4 ? 'orange' : 'red')">{{ iso6336Result.value.SF1.toFixed(2) }}</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="齿顶修缘建议">{{ iso6336Result.value.tipRelief.toFixed(0) }} μm</a-descriptions-item>
+            </a-descriptions>
+            <a-alert v-for="(w,i) in iso6336Result.value.warnings" :key="i" :message="w.message" :type="w.level==='error'?'error':w.level==='warning'?'warning':'info'" show-icon style="margin-top:12px"/>
             <div style="margin-top:16px;padding:12px;background:#f0f7ff;border-radius:4px">
               <strong>计算公式：</strong>
               <div>d = m × z / cos(β)</div>

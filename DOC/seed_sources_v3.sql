@@ -57,6 +57,7 @@ INSERT OR IGNORE INTO dataset_release (
   ('dataset_threads_iso_metric_json', 'ISO Metric Threads JSON', '1.0.0', 'iso', 'rev_iso_261_default', NULL, NULL, '仓库内置 JSON'),
   ('dataset_bolts_hex_json', 'Hex Bolts JSON', '1.0.0', 'iso', 'rev_iso_4014_default', NULL, NULL, '仓库内置 JSON'),
   ('dataset_bearings_deep_groove_json', 'Deep Groove Bearings JSON', '1.0.0', 'nsk_catalog', 'rev_iso_281_default', NULL, NULL, '仓库内置 JSON'),
+  ('dataset_nsk_deep_groove_pdf', 'NSK Deep Groove Catalog PDF', '2026-04-12', 'nsk_catalog', 'rev_iso_281_default', NULL, NULL, 'NSK 公开 PDF 目录抽取'),
   ('dataset_oring_as568_json', 'AS568 O-Ring JSON', '1.0.0', 'sae_mobilus', 'rev_as568f', NULL, NULL, '仓库内置 JSON'),
   ('dataset_materials_extended_json', 'Materials Extended JSON', '1.0.0', 'samr_openstd', 'rev_gbt_700_default', NULL, NULL, '仓库内置 JSON'),
   ('dataset_khk_vendor_seed', 'KHK Vendor Catalog Seed', '2026-04-12', 'khk_gear_world', 'rev_jis_b_1704_default', NULL, NULL, '公开商品页面抓取');
