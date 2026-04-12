@@ -1,74 +1,69 @@
-# 🛠️ MechBox (MechCalc) - 机械设计一站式工具箱
+# 🛠️ MechBox (MechCalc) - 工业级机械设计辅助与演算平台
 
 [![Electron](https://img.shields.io/badge/Electron-30.x-blue?logo=electron)](https://www.electronjs.org/)
 [![Vue](https://img.shields.io/badge/Vue-3.x-4fc08d?logo=vuedotjs)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript)](https://www.typescriptlang.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-3.x-003B57?logo=sqlite)](https://www.sqlite.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **"让每一位机械工程师都能快速、准确、自信地完成日常设计计算。"**
+> **"告别 Excel 与散落的手册，打造断网环境下绝对可靠的离线桌面指挥中心。"**
 
-MechBox 是一款专为机械工程师打造的桌面端工程辅助平台。它告别了散乱的 Excel 表格和厚重的纸质手册，将复杂的计算逻辑、海量的行业标准与直观的可视化界面深度集成。
-
----
-
-## 🌟 为什么选择 MechBox？
-
-在机械设计过程中，数据分散、重复校核、单位换算和标准错位是导致设计缺陷的主要原因。MechBox 针对性地解决了以下痛点：
-
-*   **一站式集成**：集成密封、轴承、齿轮、公差等 10+ 核心计算模块。
-*   **标准驱动**：内置 ISO 286 (公差)、AS568/ISO 3601 (密封)、GB/T (国标) 等海量标准数据库。
-*   **计算透明化**：所有计算均基于行业公认公式（如 ISO 281 轴承寿命），并提供实时计算依据提示。
-*   **离线优先**：核心计算与标准库完全本地化，确保在车间、实验室等无网络环境下依然可靠。
-*   **工程化产出**：支持导出规范的 PDF 计算书，满足项目评审与技术存档要求。
+MechBox 是一款专为机械工程师、工艺工程师及非标自动化设计人员打造的桌面端工程辅助平台。我们致力于将复杂的计算逻辑、海量的行业标准、约束求解算法与直观的现代可视化界面深度集成，提供从定性估算到图纸落地的全生命周期支持。
 
 ---
 
-## 🚀 核心功能模块
+## 🌟 核心破局点 (Why MechBox?)
+
+在机械设计过程中，数据分散、单向正算、标准错位是导致设计缺陷的主要原因。MechBox 针对性地提供了以下“重火力”解决方案：
+
+*   **100% 离线安全**：没有云端，没有订阅。所有核心计算与海量标准库（SQLite）完全本地化，确保在车间、保密军工企业等无网络环境下依然秒级响应，绝不泄露一张图纸。
+*   **逆向约束求解 (Solver Engine)**：不再是传统的“输入参数算结果”。内置牛顿迭代法、二分法与离散优化器，支持带约束条件的反向寻优（如：空间受限下自动推荐最优轴承与螺栓）。
+*   **海量本地数据库**：接入 `better-sqlite3`，摒弃低效 JSON。支持 GB/ISO/DIN/JIS/ASME 全量标准件尺寸查询，并预留企业非标件与特殊材料库扩展接口。
+*   **跨软件宏联动**：一键将计算得出的沟槽、齿轮方程或装配建议导出为 SolidWorks VBA 宏、FreeCAD Python 脚本或 STEP 占位模型。
+*   **白盒化工程产出**：不仅输出最终数值，更在界面上清晰展示计算过程与引用标准（如 ISO 281），支持一键导出专业级 PDF 计算书用于 ISO 9001 设计评审。
+
+---
+
+## 🚀 已落地核心模块 (v1.0)
 
 ### ⭕ 密封设计 (Seals)
-*   **正/反向计算**：从 O 型圈选型推荐沟槽尺寸，或根据已有沟槽校核密封性能。
-*   **多维校核**：实时计算压缩率 (Compression)、拉伸率 (Stretch)、填充率 (Fill Rate)。
-*   **材料指南**：内置 NBR、FKM、EPDM 等常用材料的硬度与介质兼容性参考。
+*   **双向寻优**：从 O 型圈选型推荐沟槽尺寸，或根据已有沟槽逆向匹配符合 AS568/GB3452 标准的密封圈。
+*   **多维安全校核**：实时计算压缩率、拉伸率、填充率，并针对静/动密封给出预警。
 
 ### 🔵 轴承工具 (Bearings)
-*   **寿命估算**：基于 ISO 281 的 L10 额定寿命计算，支持球轴承与滚子轴承。
-*   **配合与游隙**：计算由压装引起的初始游隙减少量及工作状态下的温升补偿。
-*   **规格速查**：覆盖深沟球、角接触、圆锥滚子等主流轴承型号数据库。
+*   **寿命与载荷**：基于当量动载荷计算 ISO 281 的 L10 额定寿命。
+*   **配合与游隙补偿**：计算由过盈压装引起的初始游隙减少量，以及工作温升引起的热膨胀补偿。
+*   **求解器选型**：输入预期寿命与径向空间限制，Solver 引擎自动从数据库筛选最优型号。
 
 ### 📏 公差配合 (Tolerances)
-*   **极值查询**：基于 ISO 286 标准，输入基本尺寸与公差等级（如 25H7/g6）即得极限偏差。
-*   **配合分析**：自动判断间隙、过渡或过盈配合，并可视化展示配合性质。
+*   **极值查询**：基于 ISO 286，输入 `25H7/g6` 即得微米级极限偏差。
+*   **性质判定**：自动分析间隙、过渡或过盈状态，并给出装配工艺推荐。
 
-### ⚙️ 更多模块 (持续更新中...)
-*   **螺栓连接**：预紧扭矩与抗拉强度校核。
-*   **传动选型**：V 带、同步带及链条传动计算。
-*   **液压气动**：缸径推力计算与压杆稳定性分析。
-
----
-
-## 🏗️ 架构设计
-
-项目采用 **Electron + Vue 3 + TypeScript** 架构，核心逻辑严格解耦：
-
-*   **计算引擎 (`src/renderer/engine`)**：采用纯函数实现的数学模型，单位无关，易于单元测试。
-*   **数据层 (`data/`)**：结构化的 JSON 数据库，方便扩展新的行业标准。
-*   **状态管理 (`Pinia`)**：实时同步计算参数，支持结果快照对比。
-*   **可视化层 (`ECharts`)**：直观展示压缩率仪表盘、应力曲线等工程图表。
+### ⚙️ CAD 导出引擎 (CAD Export)
+*   自动生成 SolidWorks 沟槽宏 (`.swp`) 与 FreeCAD 脚本 (`.py`)。
+*   自动生成齿轮参数方程，辅助 3D 模型特征驱动。
 
 ---
 
-## 🛠️ 技术栈
+## 🏗️ 架构设计 (混合高性能)
 
-| 类别 | 技术 |
-| :--- | :--- |
-| **壳容器** | [Electron](https://www.electronjs.org/) |
-| **前端框架** | [Vue 3](https://vuejs.org/) (Composition API) |
-| **开发语言** | [TypeScript](https://www.typescriptlang.org/) |
-| **UI 组件库** | [Ant Design Vue](https://www.antdv.com/) |
-| **状态管理** | [Pinia](https://pinia.vuejs.org/) |
-| **构建工具** | [electron-vite](https://electron-vite.org/) |
-| **单元测试** | [Vitest](https://vitest.dev/) |
-| **报表导出** | [jsPDF](https://github.com/parallax/jsPDF) & [SheetJS](https://sheetjs.com/) |
+项目目前采用 **Electron + Vue 3 + TypeScript + SQLite** 的现代化桌面架构：
+
+*   **UI 渲染层 (Vue 3 + Ant Design)**：负责高密度的工业控制台级交互与 ECharts 实时图表反馈。
+*   **计算引擎 (`src/renderer/engine`)**：基于纯 TypeScript 实现的纯函数与 Solver 约束求解层，高度解耦，易于实现 100% 测试覆盖。
+*   **本地数据中心 (`better-sqlite3`)**：在 Electron 主进程中运行，提供极速的 SQL 标准查询与自定义物料表（`user_standards`）管理。
+
+---
+
+## 🗺️ 宏伟演进路线 (v2.0 & v3.0 Roadmap)
+
+我们正朝着“工业级本地瑞士军刀”迈进，接下来的重火力演进计划（详见 [DOC/CRITIQUE_AND_IMPROVEMENT.md](./DOC/CRITIQUE_AND_IMPROVEMENT.md)）：
+
+*   🚀 **系统级耦合计算**：从单零件计算升级为 1D-FEM 轴系传动耦合求解。
+*   🦀 **Rust 核心性能榨取**：通过 `napi-rs` 将矩阵运算、蒙特卡洛 (Monte Carlo) 公差概率模拟下沉至 Rust，实现本地算力的极致压榨。
+*   🔌 **原生 CAD 插件双向联动**：研发 SolidWorks/Inventor 原生插件，通过本地 WebSocket 与 MechBox 实现参数双向捕捉与实时驱动 (Live Rebuild)。
+*   🧊 **本地 WebGL 数字孪生**：利用 Three.js 进行纯本地 3D 参数化几何生成，不打开 CAD 即可在界面上进行干涉与碰撞高亮预警。
+*   📊 **多参数扫描 (DOE) 与 PLM Lite**：提供 3D 敏感度云图分析，并加入本地方案版本管理与一键 BOM 导出。
 
 ---
 
@@ -80,7 +75,7 @@ git clone https://github.com/your-username/MechBox.git
 cd MechBox
 ```
 
-### 2. 安装依赖
+### 2. 安装依赖 (推荐使用 pnpm)
 ```bash
 pnpm install
 ```
@@ -90,37 +85,27 @@ pnpm install
 pnpm dev
 ```
 
-### 4. 构建正式包
+### 4. 构建独立安装包 (Win/Mac/Linux)
 ```bash
 pnpm build
 ```
 
 ---
 
-## 🗺️ 开发路线图 (Roadmap)
-
-- [x] **v1.0.0-Beta**: 框架搭建、公差查询、O型圈基础计算。
-- [x] **v1.1.0**: 轴承 L10 寿命引擎、多国标准库接入。
-- [ ] **v1.2.0**: 导出功能升级（PDF 计算书模板定制）。
-- [ ] **v1.3.0**: 增加齿轮几何尺寸计算与强度校核模块。
-- [ ] **v2.0.0**: 引入插件化机制，支持用户自定义计算公式。
-
----
-
 ## 🤝 参与贡献
 
-我们非常欢迎来自机械同行的贡献！你可以：
-1. **完善标准数据**：在 `data/standards` 下提交更多规格。
-2. **贡献计算模型**：在 `src/renderer/engine` 中实现新的数学公式。
-3. **反馈 Bug**：提交 Issue 告知我们在特定工况下的计算偏差。
+MechBox 的目标是打破大厂的信息壁垒与高昂订阅费。无论你是机械工程师还是开发者，我们都极度渴望你的加入：
+1. **录入权威数据**：帮助扩充 SQLite 中的 DIN/JIS/ASME 标准件尺寸与非线性材料曲线。
+2. **编写计算核心**：用 TypeScript 或 Rust 贡献你擅长的齿轮、弹簧或流体计算数学模型。
+3. **反馈工程场景**：提交 Issue 告知我们在特定真实工况下的校核盲区。
 
 ---
 
 ## 📄 开源协议
 
-本项目采用 [MIT License](LICENSE)。
+本项目采用 [MIT License](LICENSE)。完全开源免费，商业友好。
 
 ---
 
-**MechBox** —— 由工程师为工程师打造。  
-*如果您觉得这个工具有用，请点个 ⭐️ Star！*
+**MechBox** —— 由工程师为工程师打造的桌面级核武。  
+*如果您认同我们的理念，请点个 ⭐️ Star 支持！*
