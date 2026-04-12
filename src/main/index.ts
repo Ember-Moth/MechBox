@@ -67,6 +67,14 @@ function registerIpcHandlers() {
   ipcMain.handle("db-query-bearings", (_) => {
     return getDatabase().prepare("SELECT * FROM bearings_deep_groove").all();
   });
+
+  ipcMain.handle("db-query-threads", (_) => {
+    return getDatabase().prepare("SELECT * FROM threads_iso_metric").all();
+  });
+
+  ipcMain.handle("db-query-bolts", (_) => {
+    return getDatabase().prepare("SELECT * FROM bolts_hex").all();
+  });
 }
 
 app.whenReady().then(() => {

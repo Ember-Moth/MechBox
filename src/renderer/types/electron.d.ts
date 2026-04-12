@@ -16,6 +16,8 @@ declare global {
         queryOringList: (standard: string) => Promise<any[]>;
         queryOringSpec: (standard: string, code: string) => Promise<any>;
         queryBearings: () => Promise<any[]>;
+        queryThreads: () => Promise<any[]>;
+        queryBolts: () => Promise<any[]>;
       };
     };
   }

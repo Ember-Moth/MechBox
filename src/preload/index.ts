@@ -14,5 +14,7 @@ contextBridge.exposeInMainWorld("electron", {
     queryOringSpec: (standard: string, code: string) =>
       ipcRenderer.invoke("db-query-oring-spec", standard, code),
     queryBearings: () => ipcRenderer.invoke("db-query-bearings"),
+    queryThreads: () => ipcRenderer.invoke("db-query-threads"),
+    queryBolts: () => ipcRenderer.invoke("db-query-bolts"),
   },
 });
