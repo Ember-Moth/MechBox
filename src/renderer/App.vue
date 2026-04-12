@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import {
     DashboardOutlined,
     ColumnWidthOutlined,
@@ -8,13 +8,15 @@ import {
     ToolOutlined,
     StarOutlined,
 } from "@ant-design/icons-vue";
+import Dashboard from "./views/Dashboard.vue";
 import TolerancesPage from "./views/tolerances/TolerancesPage.vue";
 import SealsPage from "./views/seals/SealsPage.vue";
 import BearingsPage from "./views/bearings/BearingsPage.vue";
 import BoltsPage from "./views/bolts/BoltsPage.vue";
+import FavoritesPage from "./views/FavoritesPage.vue";
 
 const collapsed = ref(false);
-const selectedKeys = ref(["tolerances"]);
+const selectedKeys = ref(["dashboard"]);
 
 const menuItems = [
     { key: "dashboard", icon: DashboardOutlined, label: "工作台" },
@@ -24,6 +26,20 @@ const menuItems = [
     { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },
     { key: "favorites", icon: StarOutlined, label: "我的收藏" },
 ];
+
+// Handle navigation events from Dashboard
+function handleNavigation(event: Event) {
+    const customEvent = event as CustomEvent;
+    selectedKeys.value = [customEvent.detail.module];
+}
+
+onMounted(() => {
+    window.addEventListener('navigate', handleNavigation);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('navigate', handleNavigation);
+});
 </script>
 
 <template>
@@ -63,15 +79,8 @@ const menuItems = [
                         borderRadius: '8px',
                     }"
                 >
-                    <div
-                        v-if="selectedKeys[0] === 'dashboard'"
-                        style="text-align: center"
-                    >
-                        <h2>欢迎使用 MechBox (Vue 版)</h2>
-                        <p>
-                            基于 Vue 3 + Ant Design Vue 4.0
-                            构建，请在左侧选择计算模块。
-                        </p>
+                    <div v-if="selectedKeys[0] === 'dashboard'">
+                        <Dashboard />
                     </div>
                     <div v-else-if="selectedKeys[0] === 'tolerances'">
                         <TolerancesPage />
@@ -84,6 +93,9 @@ const menuItems = [
                     </div>
                     <div v-else-if="selectedKeys[0] === 'bolts'">
                         <BoltsPage />
+                    </div>
+                    <div v-else-if="selectedKeys[0] === 'favorites'">
+                        <FavoritesPage />
                     </div>
                     <div v-else>正在构建 {{ selectedKeys[0] }} 模块...</div>
                 </div>
