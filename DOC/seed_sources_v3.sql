@@ -79,6 +79,8 @@ INSERT OR IGNORE INTO dataset_release (
 ) VALUES
   ('dataset_threads_iso_metric_json', 'ISO Metric Threads JSON', '1.0.0', 'iso', 'rev_iso_261_default', NULL, NULL, '仓库内置 JSON'),
   ('dataset_oring_material_apple', 'O-Ring Material Apple', '2026-04-12', 'apple_rubber', NULL, NULL, NULL, '公开网页整理'),
+  ('dataset_oring_compat_apple', 'O-Ring Chemical Compatibility Apple', '2026-04-12', 'apple_rubber', NULL, NULL, NULL, '公开网页整理'),
+  ('dataset_oring_rules_gmors', 'O-Ring Groove Rules GMORS', '2026-04-12', 'gmors_catalog', NULL, NULL, NULL, '公开 PDF 整理'),
   ('dataset_oring_rules_marco', 'O-Ring Design Rules Marco', '2026-04-12', 'marco_sealing', NULL, NULL, NULL, '公开网页整理'),
   ('dataset_jis_b2401_gmors_pdf', 'JIS B 2401 GMORS PDF', '2026-04-12', 'gmors_catalog', 'rev_jis_b_2401_gmors', NULL, NULL, '公开 PDF 抽取'),
   ('dataset_iso_4032_ferrobend', 'ISO 4032 FERROBEND', '2026-04-12', 'ferrobend_iso', 'rev_iso_4032_ferrobend', NULL, NULL, '公开网页抽取'),

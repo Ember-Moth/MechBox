@@ -75,20 +75,41 @@ export const calcChainDrive = (params: ChainDriveParams): CalcResult<ChainDriveR
   // 中心距
   const centerDistance = params.centerDistance || (35 * chainPitch)
 
+  if (centerDistance <= 0) {
+    warnings.push({ level: 'error', message: '中心距必须大于 0', suggestion: '请输入有效中心距' })
+    // Return early to prevent division by zero
+    return {
+      value: {
+        transmissionRatio, recommendedChain, chainPitch,
+        smallSprocketTeeth, largeSprocketTeeth, chainSpeed: 0,
+        chainLength: 0, actualCenterDistance: 0, effectivePull: 0
+      },
+      unit: '',
+      warnings
+    }
+  }
+
   // 链节数
-  const chainPitchLength = 2 * centerDistance / chainPitch + 
-                           (smallSprocketTeeth + largeSprocketTeeth) / 2 + 
+  const chainPitchLength = 2 * centerDistance / chainPitch +
+                           (smallSprocketTeeth + largeSprocketTeeth) / 2 +
                            Math.pow((largeSprocketTeeth - smallSprocketTeeth) / (2 * Math.PI), 2) * chainPitch / centerDistance
-  
+
   const chainLength = Math.ceil(chainPitchLength / 2) * 2  // 圆整为偶数
 
   // 实际中心距
-  const actualCenterDistance = chainPitch / 4 * (chainLength - (smallSprocketTeeth + largeSprocketTeeth) / 2 + 
-    Math.sqrt(Math.pow(chainLength - (smallSprocketTeeth + largeSprocketTeeth) / 2, 2) - 
-    8 * Math.pow((largeSprocketTeeth - smallSprocketTeeth) / (2 * Math.PI), 2)))
+  const term1 = chainLength - (smallSprocketTeeth + largeSprocketTeeth) / 2
+  const term2 = 8 * Math.pow((largeSprocketTeeth - smallSprocketTeeth) / (2 * Math.PI), 2)
+  const sqrtArg = term1 * term1 - term2
+
+  let actualCenterDistance = 0
+  if (sqrtArg >= 0) {
+    actualCenterDistance = chainPitch / 4 * (term1 + Math.sqrt(sqrtArg))
+  } else {
+    warnings.push({ level: 'error', message: '链长与齿数不匹配，无法计算实际中心距', suggestion: '请检查链节数或中心距' })
+  }
 
   // 有效拉力
-  const effectivePull = params.power * 1000 / chainSpeed
+  const effectivePull = chainSpeed > 0 ? params.power * 1000 / chainSpeed : 0
 
   return {
     value: {

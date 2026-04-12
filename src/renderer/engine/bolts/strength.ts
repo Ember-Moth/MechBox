@@ -136,9 +136,10 @@ export const recommendTorque = (designation: string, propertyClass: string = '8.
 }
 
 /**
- * 从规格字符串中提取直径
+ * 从规格字符串中提取直径 (Section 13.4: 修复小数规格和公差带)
  */
 const extractDiameter = (designation: string): number => {
-  const match = designation.match(/M(\d+)/)
+  // 匹配 M1.6, M10, M10-6g, M10×1.5 等格式
+  const match = designation.match(/M(\d+(?:\.\d+)?)/)
   return match ? parseFloat(match[1]) : 0
 }

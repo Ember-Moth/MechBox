@@ -3,7 +3,7 @@
  * ParamScanPage.vue - 参数扫描与敏感度分析页面
  * Section 5.1: 集成 ECharts 绘制专业工程图表
  */
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { ScanOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import * as echarts from 'echarts'
 import { bearingLifeScan, sensitivityAnalysis, type ScanResult } from '../engine/param-scan'
@@ -14,6 +14,18 @@ const scanResult = ref<any>(null)
 const sensitivityResult = ref<Record<string, Record<string, number>> | null>(null)
 const chartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
+
+// Section 8.2: Fix Memory Leak - Resize Listener
+const handleResize = () => chartInstance?.resize()
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  chartInstance?.dispose()
+})
 
 // 轴承寿命扫描参数
 const bearingScan = ref({

@@ -1,6 +1,19 @@
 export {};
 
 declare global {
+  interface OringRecommendationInput {
+    standard?: string;
+    dashCode?: string;
+    crossSection?: number;
+    application?: "radial-outer" | "radial-inner" | "axial";
+    medium?: string;
+    temperatureC?: number;
+    pressureMpa?: number;
+    pressurePsi?: number;
+    hardness?: number;
+    clearanceMm?: number;
+  }
+
   interface Window {
     electron: {
       db: {
@@ -13,6 +26,7 @@ declare global {
         queryOringList: (standard?: string) => Promise<any[]>;
         queryOringSpec: (standard: string, code: string) => Promise<any>;
         queryOringMaterials: () => Promise<any[]>;
+        queryOringRecommendation: (input: OringRecommendationInput) => Promise<any>;
         queryMaterials: () => Promise<any[]>;
         queryMaterialEquivalents: (materialId?: string) => Promise<any[]>;
         queryGearModules: () => Promise<any[]>;

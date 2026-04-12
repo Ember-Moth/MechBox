@@ -14,6 +14,11 @@ export const calcLife = (C: number, P: number, type: 'ball' | 'roller', speed: n
       return { value: { L10: 0, L10h: 0 }, unit: '', warnings }
   }
 
+  if (speed <= 0) {
+      warnings.push({ level: 'error', message: '转速必须大于 0' })
+      return { value: { L10: 0, L10h: 0 }, unit: '', warnings }
+  }
+
   const L10 = Math.pow((C / P), p) // 百万转
   const L10h = (1000000 / (60 * speed)) * L10 // 小时
 

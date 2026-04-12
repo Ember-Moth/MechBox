@@ -21,6 +21,18 @@ contextBridge.exposeInMainWorld("electron", {
     queryOringSpec: (standard: string, code: string) =>
       ipcRenderer.invoke("db-query-oring-spec", standard, code),
     queryOringMaterials: () => ipcRenderer.invoke("db-query-oring-materials"),
+    queryOringRecommendation: (input: {
+      standard?: string;
+      dashCode?: string;
+      crossSection?: number;
+      application?: "radial-outer" | "radial-inner" | "axial";
+      medium?: string;
+      temperatureC?: number;
+      pressureMpa?: number;
+      pressurePsi?: number;
+      hardness?: number;
+      clearanceMm?: number;
+    }) => ipcRenderer.invoke("db-query-oring-recommendation", input),
     
     // Materials
     queryMaterials: () => ipcRenderer.invoke("db-query-materials"),

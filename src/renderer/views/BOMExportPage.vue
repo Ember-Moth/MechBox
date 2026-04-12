@@ -10,7 +10,8 @@ import { DownloadOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icon
 const projectInfo = ref({
   name: '机械装配体BOM',
   number: 'BOM-2026-001',
-  author: '工程师'
+  author: '工程师',
+  date: new Date().toISOString().slice(0, 10)
 })
 
 const bomItems = ref<BOMItem[]>([

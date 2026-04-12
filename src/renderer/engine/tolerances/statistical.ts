@@ -89,12 +89,22 @@ export const calcRSS = (
   // 良品率
   const withinSpec = samples.filter(v => v >= lowerSpec && v <= upperSpec).length
   const yieldRate = (withinSpec / samples.length) * 100
-  
+
   // 工序能力指数
-  const cp = (upperSpec - lowerSpec) / (6 * simulatedStdDev)
-  const cpu = (upperSpec - simulatedMean) / (3 * simulatedStdDev)
-  const cpl = (simulatedMean - lowerSpec) / (3 * simulatedStdDev)
-  const cpk = Math.min(cpu, cpl)
+  let cp = Infinity
+  let cpk = Infinity
+  
+  if (simulatedStdDev > 0) {
+    cp = (upperSpec - lowerSpec) / (6 * simulatedStdDev)
+    const cpu = (upperSpec - simulatedMean) / (3 * simulatedStdDev)
+    const cpl = (simulatedMean - lowerSpec) / (3 * simulatedStdDev)
+    cpk = Math.min(cpu, cpl)
+  } else {
+    // 如果标准差为 0，且均值在规格内，则能力无限大
+    const inSpec = simulatedMean >= lowerSpec && simulatedMean <= upperSpec
+    cp = inSpec ? Infinity : 0
+    cpk = inSpec ? Infinity : 0
+  }
   
   // 警告检查
   if (cp < 1.0) {
@@ -149,14 +159,15 @@ export const quickToleranceStack = (
   const worstCase = dimensions.reduce(
     (sum, d) => sum + Math.max(d.tolerance_plus, d.tolerance_minus), 0
   )
-  
+
   const rss = Math.sqrt(
     dimensions.reduce(
       (sum, d) => sum + Math.pow(Math.max(d.tolerance_plus, d.tolerance_minus), 2), 0
     )
   )
-  
-  const savings = ((1 - rss / worstCase) * 100)
-  
+
+  // 防止除以零
+  const savings = worstCase > 0 ? ((1 - rss / worstCase) * 100) : 0
+
   return { worstCase, rss, savings }
 }

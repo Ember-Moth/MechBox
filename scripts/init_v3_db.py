@@ -14,6 +14,7 @@ DB_PATH = DATA_DIR / "mechbox.db"
 SCHEMA_PATH = REPO_ROOT / "DOC" / "schema_v3.sql"
 SEED_PATH = REPO_ROOT / "DOC" / "seed_sources_v3.sql"
 GMORS_JIS_B2401_PDF_URL = "https://www.gmors.com/files/CatalogDownload/file/Ya/gmors-o-ring-jisb-2401.pdf"
+APPLE_CHEMICAL_GUIDE_URL = "https://www.applerubber.com/chemical-compatibility-guide/"
 
 KHK_URLS = [
     "https://www.khkgears.us/catalog/product/SSG1-20",
@@ -133,6 +134,17 @@ def fetch_pdf_text(url: str) -> str:
         return result.stdout
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+def parse_apple_compatibility_page(html: str):
+    match = re.search(r"<ul><li class=\"compat-[\s\S]*?</ul>", html, re.I)
+    if not match:
+        return {}
+    rows = re.findall(r'class="compat-(\d+)".*?<span>(.*?)</span>', match.group(0), re.I | re.S)
+    result = {}
+    for rating_code, label in rows:
+        result[strip_tags(label)] = int(rating_code)
+    return result
 
 
 def parse_khk_page(html: str, url: str):
@@ -874,6 +886,279 @@ def import_oring_design_rules(conn: sqlite3.Connection):
     )
 
 
+def import_oring_gland_rules(conn: sqlite3.Connection):
+    tables = [
+        (
+            "rule_oring_gland_static_radial_as568",
+            "oring_gland_static_radial_as568",
+            "AS568 Static Radial Gland",
+            "GMORS O-Ring Master static industrial seal gland dimensions by AS568 cross-section group.",
+        ),
+        (
+            "rule_oring_gland_face_as568",
+            "oring_gland_face_as568",
+            "AS568 Static Face Gland",
+            "GMORS O-Ring Master static face seal gland dimensions by AS568 cross-section group.",
+        ),
+        (
+            "rule_oring_extrusion_limit",
+            "oring_extrusion_limit",
+            "O-Ring Extrusion Limit",
+            "GMORS diametral clearance limits against fluid pressure and hardness without back-up rings.",
+        ),
+        (
+            "rule_oring_backup_ring_general",
+            "oring_backup_ring_general",
+            "O-Ring Back-Up Ring Notes",
+            "GMORS general back-up ring recommendations and derating notes.",
+        ),
+    ]
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_table
+        (rule_table_id, rule_code, rule_name, domain_code, dataset_id, notes)
+        VALUES (?, ?, ?, 'seal', 'dataset_oring_rules_gmors', ?)
+        """,
+        tables,
+    )
+
+    radial_rows = [
+        ("004_050", "004 through 050", 1, 0.070, 0.050, 0.052, 22, 32, 0.002, 0.005, 0.093, 0.098, 0.138, 0.143, 0.205, 0.210, 0.005, 0.015, 0.002),
+        ("102_178", "102 through 178", 2, 0.103, 0.081, 0.083, 17, 24, 0.002, 0.005, 0.140, 0.145, 0.171, 0.176, 0.238, 0.243, 0.005, 0.015, 0.002),
+        ("201_284", "201 through 284", 3, 0.139, 0.111, 0.113, 16, 23, 0.003, 0.006, 0.187, 0.192, 0.208, 0.213, 0.275, 0.280, 0.010, 0.025, 0.003),
+        ("309_395", "309 through 395", 4, 0.210, 0.170, 0.173, 15, 21, 0.003, 0.006, 0.281, 0.286, 0.311, 0.316, 0.410, 0.415, 0.020, 0.035, 0.004),
+        ("425_475", "425 through 475", 5, 0.275, 0.226, 0.229, 15, 20, 0.004, 0.007, 0.375, 0.380, 0.408, 0.413, 0.538, 0.543, 0.020, 0.035, 0.005),
+    ]
+    face_rows = [
+        ("004_050", "004 through 050", 1, 0.070, 0.050, 0.054, 19, 32, 0.101, 0.107, 0.084, 0.089, 0.005, 0.015),
+        ("102_178", "102 through 178", 2, 0.103, 0.074, 0.080, 20, 30, 0.136, 0.142, 0.120, 0.125, 0.005, 0.015),
+        ("201_284", "201 through 284", 3, 0.139, 0.101, 0.107, 20, 30, 0.177, 0.187, 0.158, 0.164, 0.010, 0.025),
+        ("309_395", "309 through 395", 4, 0.210, 0.152, 0.162, 21, 30, 0.270, 0.290, 0.239, 0.244, 0.020, 0.035),
+        ("425_475", "425 through 475", 5, 0.275, 0.201, 0.211, 21, 29, 0.342, 0.362, 0.309, 0.314, 0.020, 0.035),
+    ]
+
+    rule_rows = []
+    numeric_values = []
+
+    for key, label, sort_order, nominal_cs, depth_min, depth_max, squeeze_min, squeeze_max, clearance_min, clearance_max, width_min, width_max, width1_min, width1_max, width2_min, width2_max, radius_min, radius_max, max_ecc in radial_rows:
+        row_id = f"rule_oring_gland_static_radial_as568_{key}"
+        rule_rows.append((row_id, "rule_oring_gland_static_radial_as568", key, label, sort_order))
+        numeric_values.extend(
+            [
+                (row_id, "nominal_cs_in", nominal_cs, "in"),
+                (row_id, "gland_depth_min_in", depth_min, "in"),
+                (row_id, "gland_depth_max_in", depth_max, "in"),
+                (row_id, "squeeze_min_pct", squeeze_min, "pct"),
+                (row_id, "squeeze_max_pct", squeeze_max, "pct"),
+                (row_id, "diametral_clearance_min_in", clearance_min, "in"),
+                (row_id, "diametral_clearance_max_in", clearance_max, "in"),
+                (row_id, "groove_width_no_backup_min_in", width_min, "in"),
+                (row_id, "groove_width_no_backup_max_in", width_max, "in"),
+                (row_id, "groove_width_one_backup_min_in", width1_min, "in"),
+                (row_id, "groove_width_one_backup_max_in", width1_max, "in"),
+                (row_id, "groove_width_two_backup_min_in", width2_min, "in"),
+                (row_id, "groove_width_two_backup_max_in", width2_max, "in"),
+                (row_id, "groove_radius_min_in", radius_min, "in"),
+                (row_id, "groove_radius_max_in", radius_max, "in"),
+                (row_id, "max_eccentricity_in", max_ecc, "in"),
+            ]
+        )
+
+    for key, label, sort_order, nominal_cs, depth_min, depth_max, squeeze_min, squeeze_max, width_liq_min, width_liq_max, width_vac_min, width_vac_max, radius_min, radius_max in face_rows:
+        row_id = f"rule_oring_gland_face_as568_{key}"
+        rule_rows.append((row_id, "rule_oring_gland_face_as568", key, label, sort_order))
+        numeric_values.extend(
+            [
+                (row_id, "nominal_cs_in", nominal_cs, "in"),
+                (row_id, "gland_depth_min_in", depth_min, "in"),
+                (row_id, "gland_depth_max_in", depth_max, "in"),
+                (row_id, "squeeze_min_pct", squeeze_min, "pct"),
+                (row_id, "squeeze_max_pct", squeeze_max, "pct"),
+                (row_id, "groove_width_liquid_min_in", width_liq_min, "in"),
+                (row_id, "groove_width_liquid_max_in", width_liq_max, "in"),
+                (row_id, "groove_width_vacuum_min_in", width_vac_min, "in"),
+                (row_id, "groove_width_vacuum_max_in", width_vac_max, "in"),
+                (row_id, "groove_radius_min_in", radius_min, "in"),
+                (row_id, "groove_radius_max_in", radius_max, "in"),
+            ]
+        )
+
+    extrusion_rows = [
+        ("up_to_500_70", "Up to 500 psi / 70A", 1, 70, 0, 500, 0.016),
+        ("up_to_500_90", "Up to 500 psi / 90A", 2, 90, 0, 500, 0.028),
+        ("500_1000_70", "500-1000 psi / 70A", 3, 70, 500, 1000, 0.010),
+        ("500_1000_90", "500-1000 psi / 90A", 4, 90, 500, 1000, 0.024),
+        ("1000_1500_70", "1000-1500 psi / 70A", 5, 70, 1000, 1500, 0.006),
+        ("1000_1500_90", "1000-1500 psi / 90A", 6, 90, 1000, 1500, 0.020),
+        ("1500_2000_70", "1500-2000 psi / 70A", 7, 70, 1500, 2000, 0.004),
+        ("1500_2000_90", "1500-2000 psi / 90A", 8, 90, 1500, 2000, 0.016),
+        ("2000_3000_70", "2000-3000 psi / 70A", 9, 70, 2000, 3000, 0.002),
+        ("2000_3000_90", "2000-3000 psi / 90A", 10, 90, 2000, 3000, 0.010),
+    ]
+    for key, label, sort_order, hardness, pressure_min, pressure_max, max_clearance in extrusion_rows:
+        row_id = f"rule_oring_extrusion_limit_{key}"
+        rule_rows.append((row_id, "rule_oring_extrusion_limit", key, label, sort_order))
+        numeric_values.extend(
+            [
+                (row_id, "hardness_shore_a", hardness, "shore_a"),
+                (row_id, "pressure_min_psi", pressure_min, "psi"),
+                (row_id, "pressure_max_psi", pressure_max, "psi"),
+                (row_id, "max_diametral_clearance_in", max_clearance, "in"),
+            ]
+        )
+
+    backup_rows = [
+        ("clearance_derate_silicone", "Silicone / Fluorosilicone Derating", 1),
+        ("gland_depth_increase_with_backup", "Gland Depth Increase With Back-Up Ring", 2),
+    ]
+    for key, label, sort_order in backup_rows:
+        row_id = f"rule_oring_backup_ring_general_{key}"
+        rule_rows.append((row_id, "rule_oring_backup_ring_general", key, label, sort_order))
+
+    numeric_values.extend(
+        [
+            ("rule_oring_backup_ring_general_clearance_derate_silicone", "clearance_multiplier", 0.5, "ratio"),
+            ("rule_oring_backup_ring_general_gland_depth_increase_with_backup", "max_depth_increase_pct", 5, "pct"),
+        ]
+    )
+
+    text_values = [
+        (
+            "rule_oring_backup_ring_general_clearance_derate_silicone",
+            "note",
+            "Reduce maximum diametral clearance 50% when using silicone or fluorosilicone O-rings.",
+        ),
+        (
+            "rule_oring_backup_ring_general_gland_depth_increase_with_backup",
+            "note",
+            "For ease of assembly, gland depth may be increased up to 5% when back-up rings are used.",
+        ),
+    ]
+
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_row
+        (rule_row_id, rule_table_id, row_key, row_label, sort_order)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        rule_rows,
+    )
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_value_numeric
+        (rule_row_id, column_code, numeric_value, unit_code)
+        VALUES (?, ?, ?, ?)
+        """,
+        numeric_values,
+    )
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_value_text
+        (rule_row_id, column_code, text_value)
+        VALUES (?, ?, ?)
+        """,
+        text_values,
+    )
+    conn.execute(
+        """
+        UPDATE dataset_release
+        SET row_count = ?
+        WHERE dataset_id = 'dataset_oring_rules_gmors'
+        """,
+        (len(rule_rows),),
+    )
+
+
+def import_oring_chemical_compatibility(conn: sqlite3.Connection):
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO rule_table
+        (rule_table_id, rule_code, rule_name, domain_code, dataset_id, notes)
+        VALUES (?, ?, ?, 'seal', 'dataset_oring_compat_apple', ?)
+        """,
+        (
+            "rule_oring_chemical_compatibility_basic",
+            "oring_chemical_compatibility_basic",
+            "O-Ring Chemical Compatibility Basic",
+            "Apple Rubber public compatibility guide curated for common sealing media at 70°F.",
+        ),
+    )
+
+    chemicals = [
+        ("acetone", "Acetone", 6),
+        ("ammonia_anhydrous", "Ammonia Anhydrous", 20),
+        ("denatured_alcohol", "Denatured Alcohol", 153),
+        ("diesel_oil", "Diesel Oil", 168),
+        ("ethylene_glycol", "Ethylene Glycol", 216),
+        ("red_oil_mil_h_5606", "Red Oil (MIL-H-5606)", 440),
+        ("salt_water", "Salt Water", 445),
+        ("skydrol_500", "Skydrol 500", 451),
+        ("skydrol_7000", "Skydrol 7000", 452),
+        ("steam_under_300f", "Steam Under 300 F", 474),
+        ("steam_over_300f", "Steam Over 300 F", 475),
+        ("stoddard_solvent", "Stoddard Solvent", 477),
+        ("brake_fluid_wagner_21b", "Wagner 21B Brake Fluid", 535),
+        ("water", "Water", 536),
+        ("white_oil", "White Oil", 539),
+    ]
+    material_map = {
+        "Chloroprene": "CR",
+        "Ethylene-Propylene": "EPDM",
+        "Fluorocarbon": "FKM",
+        "Fluorosilicone": "FVMQ",
+        "Hydrogenated Nitrile": "HNBR",
+        "Nitrile (Buna-N)": "NBR",
+        "Silicone": "VMQ",
+    }
+    rating_map = {
+        1: "good",
+        2: "fair",
+        3: "questionable",
+        4: "poor",
+        0: "insufficient_data",
+        5: "insufficient_data",
+    }
+
+    row_inserts = []
+    text_inserts = []
+    for sort_order, (row_key, row_label, chemical_id) in enumerate(chemicals, start=1):
+        row_id = f"rule_oring_chemical_compatibility_basic_{row_key}"
+        row_inserts.append((row_id, "rule_oring_chemical_compatibility_basic", row_key, row_label, sort_order))
+        html = fetch_text(f"{APPLE_CHEMICAL_GUIDE_URL}?chemical_alpha=&chemical_filter=%2A&chemical_id={chemical_id}")
+        compatibility = parse_apple_compatibility_page(html)
+        text_inserts.append((row_id, "source_chemical_id", str(chemical_id)))
+        text_inserts.append((row_id, "temperature_basis", "70F"))
+        text_inserts.append((row_id, "FFKM", "not_listed"))
+        for source_label, material_code in material_map.items():
+            if source_label in compatibility:
+                text_inserts.append((row_id, material_code, rating_map.get(compatibility[source_label], "insufficient_data")))
+
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_row
+        (rule_row_id, rule_table_id, row_key, row_label, sort_order)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        row_inserts,
+    )
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_value_text
+        (rule_row_id, column_code, text_value)
+        VALUES (?, ?, ?)
+        """,
+        text_inserts,
+    )
+    conn.execute(
+        """
+        UPDATE dataset_release
+        SET row_count = ?
+        WHERE dataset_id = 'dataset_oring_compat_apple'
+        """,
+        (len(row_inserts),),
+    )
+
+
 def import_materials(conn: sqlite3.Connection):
     data = load_json(REPO_ROOT / "data" / "materials-extended.json")
     for family, materials in data.items():
@@ -1168,7 +1453,9 @@ def rebuild_search(conn: sqlite3.Connection):
 def seed_data_version(conn: sqlite3.Connection):
     rows = [
         ("V3_SCHEMA", "3.0.0", "system", "schema_v3"),
+        ("ORING_COMPAT_APPLE", "2026-04-12", "apple_rubber", "rows:15"),
         ("JIS_B2401_GMORS", "2026-04-12", "gmors_catalog", "rows:419"),
+        ("ORING_GLAND_GMORS", "2026-04-12", "gmors_catalog", "rows:22"),
         ("ORING_MATERIAL_APPLE", "2026-04-12", "apple_rubber", "rows:8"),
         ("ORING_RULES_MARCO", "2026-04-12", "marco_sealing", "rows:9"),
         ("KHK_VENDOR", "2026-04-12", "khk_gear_world", f"urls:{len(KHK_URLS)}"),
@@ -1221,6 +1508,8 @@ def main():
     import_jis_b2401_orings(conn)
     import_oring_materials(conn)
     import_oring_design_rules(conn)
+    import_oring_gland_rules(conn)
+    import_oring_chemical_compatibility(conn)
     import_materials(conn)
     import_seed_gear_modules(conn)
     import_khk_vendor_parts(conn)

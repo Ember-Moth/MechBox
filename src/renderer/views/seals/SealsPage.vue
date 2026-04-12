@@ -13,6 +13,28 @@ import {
 } from "@ant-design/icons-vue";
 
 const store = useStandardStore();
+const MM_PER_INCH = 25.4;
+
+const standardOptions = [
+    { label: "AS568", value: "std_as568" },
+    { label: "JIS B 2401", value: "std_jis_b_2401" },
+];
+
+const mediumOptions = [
+    { label: "Water", value: "water" },
+    { label: "Salt Water", value: "salt_water" },
+    { label: "Steam < 300 F", value: "steam_under_300f" },
+    { label: "Steam > 300 F", value: "steam_over_300f" },
+    { label: "Diesel Oil", value: "diesel_oil" },
+    { label: "White Oil", value: "white_oil" },
+    { label: "Ethylene Glycol", value: "ethylene_glycol" },
+    { label: "Brake Fluid", value: "brake_fluid_wagner_21b" },
+    { label: "Skydrol 500", value: "skydrol_500" },
+    { label: "Skydrol 7000", value: "skydrol_7000" },
+    { label: "Acetone", value: "acetone" },
+    { label: "Denatured Alcohol", value: "denatured_alcohol" },
+    { label: "Ammonia", value: "ammonia_anhydrous" },
+];
 
 // 密封类型与状态
 const sealType = ref("radial-outer");
@@ -21,6 +43,8 @@ const unit = ref("mm");
 
 // 输入参数表单
 const form = ref({
+    selectedStandard: "std_as568",
+    selectedDashCode: "214",
     d4: 25.0, // 缸孔直径
     d9: 24.5, // 活塞直径
     d3: 20.0, // 沟槽底径
@@ -28,10 +52,16 @@ const form = ref({
     r: 0.2, // 沟槽圆角
     d1: 18.64, // O形圈内径
     d2: 3.53, // O形圈线径
-    temp: 23,
+    temperature: 23,
+    pressure: 0,
+    medium: "water",
     expansion: 0,
     hardness: 70,
 });
+
+const oringRecommendation = ref<any | null>(null);
+const recommendationLoading = ref(false);
+let recommendationRequestId = 0;
 
 // 公差代号选择
 const tolCodes = ref({
@@ -111,16 +141,73 @@ watch(
     { deep: true },
 );
 
-onMounted(() => {
-    store.fetchOringList("AS568");
-});
-
 // 规格自动填充
 const onOringSelect = async (code: string) => {
-    const spec = await window.electron.db.queryOringSpec("AS568", code);
+    form.value.selectedDashCode = code;
+    const spec = await window.electron.db.queryOringSpec(
+        form.value.selectedStandard,
+        code,
+    );
     if (spec) {
         form.value.d1 = spec.id;
         form.value.d2 = spec.cs;
+    }
+};
+
+const toMultiPhysicsMaterial = (
+    materialCode?: string,
+): "NBR" | "FKM" | "EPDM" | "VMQ" => {
+    if (materialCode === "FKM") return "FKM";
+    if (materialCode === "EPDM") return "EPDM";
+    if (materialCode === "VMQ" || materialCode === "FVMQ") return "VMQ";
+    return "NBR";
+};
+
+const toMultiPhysicsMedium = (
+    medium: string,
+): "mineral_oil" | "fuel" | "water" | "air" => {
+    if (["diesel_oil", "red_oil_mil_h_5606"].includes(medium)) return "fuel";
+    if (["white_oil", "stoddard_solvent"].includes(medium))
+        return "mineral_oil";
+    if (
+        [
+            "water",
+            "salt_water",
+            "steam_under_300f",
+            "steam_over_300f",
+            "ethylene_glycol",
+            "brake_fluid_wagner_21b",
+            "skydrol_500",
+            "skydrol_7000",
+        ].includes(medium)
+    ) {
+        return "water";
+    }
+    return "air";
+};
+
+const refreshOringRecommendation = async () => {
+    const requestId = ++recommendationRequestId;
+    recommendationLoading.value = true;
+    try {
+        const recommendation = await window.electron.db.queryOringRecommendation({
+            standard: form.value.selectedStandard,
+            dashCode: form.value.selectedDashCode || undefined,
+            crossSection: form.value.d2,
+            application: sealType.value as "radial-outer" | "radial-inner" | "axial",
+            medium: form.value.medium,
+            temperatureC: form.value.temperature,
+            pressureMpa: form.value.pressure,
+            hardness: form.value.hardness,
+            clearanceMm: limits.value.maxClearance,
+        });
+        if (requestId === recommendationRequestId) {
+            oringRecommendation.value = recommendation;
+        }
+    } finally {
+        if (requestId === recommendationRequestId) {
+            recommendationLoading.value = false;
+        }
     }
 };
 
@@ -133,6 +220,10 @@ const results = computed(() => {
     const clearance = (form.value.d4 - form.value.d9) / 2;
     const fillRate =
         ((Math.PI * Math.pow(cs / 2, 2)) / (depth * form.value.b1)) * 100;
+    const recommendedMaterial = toMultiPhysicsMaterial(
+        oringRecommendation.value?.recommendedMaterial?.materialCode,
+    );
+    const simplifiedMedium = toMultiPhysicsMedium(form.value.medium);
 
     // 多场耦合计算 (Section 10.1)
     const multiPhysics = calcSealMultiPhysics({
@@ -143,9 +234,9 @@ const results = computed(() => {
         clearance,
         temperature: form.value.temperature || 20,
         pressure: form.value.pressure || 0,
-        material: form.value.material || 'NBR',
-        medium: form.value.medium || 'mineral_oil',
-        application: isStatic.value ? 'static' : 'reciprocating'
+        material: recommendedMaterial,
+        medium: simplifiedMedium,
+        application: isStatic.value ? "static" : "reciprocating",
     });
 
     return { compression: comp, stretch: str, clearance, fillRate, multiPhysics };
@@ -181,6 +272,98 @@ const limits = computed(() => {
 const svgScale = computed(() => {
     const maxDim = Math.max(form.value.d4, 30);
     return 200 / maxDim;
+});
+
+const recommendedMaterialText = computed(() => {
+    const recommendation = oringRecommendation.value?.recommendedMaterial;
+    if (!recommendation) return "待查询";
+    const rating = recommendation.rating
+        ? ` / ${String(recommendation.rating).toUpperCase()}`
+        : "";
+    return `${recommendation.materialCode} ${recommendation.hardnessShoreA ?? ""}${rating}`.trim();
+});
+
+const backupRingText = computed(() => {
+    const backup = oringRecommendation.value?.backupRing;
+    if (!backup) return "待查询";
+    if (!backup.needed) return "不需要";
+    return `需要 ${backup.count} 道`;
+});
+
+const glandDepthText = computed(() => {
+    const gland = oringRecommendation.value?.gland?.valuesMm;
+    if (!gland?.gland_depth_min_mm || !gland?.gland_depth_max_mm) return "--";
+    return `${gland.gland_depth_min_mm.toFixed(2)} ~ ${gland.gland_depth_max_mm.toFixed(2)} mm`;
+});
+
+const glandWidthText = computed(() => {
+    const gland = oringRecommendation.value?.gland;
+    if (!gland?.valuesMm) return "--";
+    if (gland.mode === "face") {
+        const min = gland.valuesMm.groove_width_liquid_min_mm;
+        const max = gland.valuesMm.groove_width_liquid_max_mm;
+        return min && max ? `${min.toFixed(2)} ~ ${max.toFixed(2)} mm` : "--";
+    }
+
+    const prefix = gland.backupRingCount >= 1 ? "groove_width_one_backup" : "groove_width_no_backup";
+    const min = gland.valuesMm[`${prefix}_min_mm`];
+    const max = gland.valuesMm[`${prefix}_max_mm`];
+    return min && max ? `${min.toFixed(2)} ~ ${max.toFixed(2)} mm` : "--";
+});
+
+const recommendationNote = computed(() => {
+    const recommendation = oringRecommendation.value;
+    if (!recommendation) return "";
+    if (recommendation.mediumKey && recommendation.mediumKey !== form.value.medium) {
+        return `兼容性按 ${recommendation.mediumLabel} 近似匹配`;
+    }
+    return recommendation.extrusion?.materialDeratingApplied
+        ? "硅胶/氟硅胶按 50% 间隙降额校核"
+        : "";
+});
+
+watch(
+    () => form.value.selectedStandard,
+    async (standard) => {
+        await store.fetchOringList(standard);
+        const exists = store.oringList.some(
+            (item) => item.code === form.value.selectedDashCode,
+        );
+        if (!exists && store.oringList[0]) {
+            form.value.selectedDashCode = store.oringList[0].code;
+            form.value.d1 = store.oringList[0].id;
+            form.value.d2 = store.oringList[0].cs;
+        }
+    },
+    { immediate: true },
+);
+
+watch(
+    () => [
+        form.value.selectedStandard,
+        form.value.selectedDashCode,
+        form.value.d2,
+        form.value.temperature,
+        form.value.pressure,
+        form.value.medium,
+        form.value.hardness,
+        sealType.value,
+        limits.value.maxClearance,
+    ],
+    () => {
+        void refreshOringRecommendation();
+    },
+    { deep: true },
+);
+
+onMounted(async () => {
+    await onOringSelect(form.value.selectedDashCode);
+    await Promise.all([
+        updateDeviations("d4"),
+        updateDeviations("d9"),
+        updateDeviations("d3"),
+    ]);
+    await refreshOringRecommendation();
 });
 </script>
 
@@ -288,12 +471,19 @@ const svgScale = computed(() => {
 
                         <div class="search-box">
                             <div class="search-label">
-                                O形圈规格快速选择 (AS568)
+                                O形圈规格快速选择
                             </div>
+                            <a-select
+                                v-model:value="form.selectedStandard"
+                                :options="standardOptions"
+                                style="width: 100%; margin-bottom: 8px"
+                                size="small"
+                            />
                             <a-select
                                 show-search
                                 placeholder="搜索规格代码 (如 010, 110...)"
                                 style="width: 100%"
+                                v-model:value="form.selectedDashCode"
                                 @change="onOringSelect"
                             >
                                 <a-select-option
@@ -301,7 +491,7 @@ const svgScale = computed(() => {
                                     :key="s.code"
                                     :value="s.code"
                                 >
-                                    AS568-{{ s.code }} ({{ s.id }} x {{ s.cs }})
+                                    {{ s.code }} ({{ s.id }} x {{ s.cs }})
                                 </a-select-option>
                             </a-select>
                         </div>
@@ -575,6 +765,61 @@ const svgScale = computed(() => {
                             </tbody>
                         </table>
 
+                        <div class="condition-panel">
+                            <div class="condition-header">
+                                工况条件与规则推荐
+                            </div>
+                            <a-row :gutter="12">
+                                <a-col :span="8">
+                                    <div class="field-label">介质</div>
+                                    <a-select
+                                        v-model:value="form.medium"
+                                        :options="mediumOptions"
+                                        size="small"
+                                        style="width: 100%"
+                                    />
+                                </a-col>
+                                <a-col :span="5">
+                                    <div class="field-label">温度 °C</div>
+                                    <a-input-number
+                                        v-model:value="form.temperature"
+                                        size="small"
+                                        :step="1"
+                                        style="width: 100%"
+                                    />
+                                </a-col>
+                                <a-col :span="5">
+                                    <div class="field-label">压力 MPa</div>
+                                    <a-input-number
+                                        v-model:value="form.pressure"
+                                        size="small"
+                                        :step="0.1"
+                                        style="width: 100%"
+                                    />
+                                </a-col>
+                                <a-col :span="6">
+                                    <div class="field-label">硬度 Shore A</div>
+                                    <a-input-number
+                                        v-model:value="form.hardness"
+                                        size="small"
+                                        :step="5"
+                                        style="width: 100%"
+                                    />
+                                </a-col>
+                            </a-row>
+                            <div class="condition-note">
+                                <span v-if="recommendationLoading">规则查询中...</span>
+                                <span v-else-if="recommendationNote">{{
+                                    recommendationNote
+                                }}</span>
+                                <span v-else>
+                                    当前防挤出校核按最大装配间隙
+                                    {{ limits.maxClearance.toFixed(3) }} mm
+                                    进行
+                                </span>
+                            </div>
+                        </div>
+
                         <div class="result-section">
                             <a-row :gutter="16">
                                 <a-col :span="12">
@@ -681,7 +926,27 @@ const svgScale = computed(() => {
                                             mm
                                         </div>
                                         <div class="res-label">推荐材料</div>
-                                        <div class="res-value">NBR 70</div>
+                                        <div class="res-value">
+                                            {{ recommendedMaterialText }}
+                                        </div>
+                                        <div class="res-label">防挤出挡圈</div>
+                                        <div
+                                            class="res-value"
+                                            :class="{
+                                                error: oringRecommendation
+                                                    ?.backupRing?.needed,
+                                            }"
+                                        >
+                                            {{ backupRingText }}
+                                        </div>
+                                        <div class="res-label">建议槽深</div>
+                                        <div class="res-value">
+                                            {{ glandDepthText }}
+                                        </div>
+                                        <div class="res-label">建议槽宽</div>
+                                        <div class="res-value">
+                                            {{ glandWidthText }}
+                                        </div>
                                     </div>
                                 </a-col>
                             </a-row>
@@ -771,6 +1036,27 @@ const svgScale = computed(() => {
 .input-section {
     border-left: 1px solid #f0f0f0;
     padding-left: 12px;
+}
+.condition-panel {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid #d9e8ec;
+    background: #f8fcfd;
+}
+.condition-header {
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: #0b5d6b;
+}
+.field-label {
+    margin-bottom: 4px;
+    color: #666;
+    font-size: 11px;
+}
+.condition-note {
+    margin-top: 8px;
+    color: #666;
+    font-size: 11px;
 }
 
 .section-header {

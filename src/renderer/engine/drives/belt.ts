@@ -70,7 +70,9 @@ export const calcVBel = (params: BeltDriveParams): CalcResult<BeltDriveResult> =
   const beltSpeed = Math.PI * smallPulleyDiameter * params.speed1 / 60000  // m/s
 
   // 带速校验
-  if (beltSpeed < 5) {
+  if (beltSpeed === 0) {
+    warnings.push({ level: 'error', message: '小带轮转速必须大于 0', suggestion: '请输入有效转速' })
+  } else if (beltSpeed < 5) {
     warnings.push({ level: 'warning', message: `带速 ${beltSpeed.toFixed(1)}m/s 过低，建议增大带轮直径`, suggestion: 'V带推荐带速 5~25 m/s' })
   } else if (beltSpeed > 30) {
     warnings.push({ level: 'error', message: `带速 ${beltSpeed.toFixed(1)}m/s 过高，离心力过大`, suggestion: '降低转速或减小带轮直径' })

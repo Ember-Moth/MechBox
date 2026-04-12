@@ -82,7 +82,7 @@ function importJsonToV3Tables() {
   if (existsSync(threadsPath)) {
     const threadsData = require(threadsPath);
     const insertThread = db.prepare(
-      `INSERT OR IGNORE INTO thread_metric
+      `INSERT OR REPLACE INTO thread_metric
        (thread_id, standard_id, revision_id, designation, nominal_d, pitch, pitch_diameter, minor_diameter, stress_area, dataset_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
@@ -110,7 +110,7 @@ function importJsonToV3Tables() {
   if (existsSync(boltsPath)) {
     const boltsData = require(boltsPath);
     const insertBolt = db.prepare(
-      `INSERT OR IGNORE INTO fastener_hex_bolt
+      `INSERT OR REPLACE INTO fastener_hex_bolt
        (bolt_id, standard_id, revision_id, designation, nominal_d, pitch, head_width_s, head_height_k, dataset_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
@@ -137,7 +137,7 @@ function importJsonToV3Tables() {
   if (existsSync(bearingsPath)) {
     const bearingsData = require(bearingsPath);
     const insertBearing = db.prepare(
-      `INSERT OR IGNORE INTO bearing_basic
+      `INSERT OR REPLACE INTO bearing_basic
        (bearing_id, standard_id, revision_id, designation, bearing_type, inner_diameter, outer_diameter, width,
         dynamic_load_rating, static_load_rating, grease_speed_limit, oil_speed_limit, mass, dataset_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -170,7 +170,7 @@ function importJsonToV3Tables() {
   if (existsSync(oringPath)) {
     const oringData = require(oringPath);
     const insertOring = db.prepare(
-      `INSERT OR IGNORE INTO seal_oring_size
+      `INSERT OR REPLACE INTO seal_oring_size
        (oring_id, standard_id, revision_id, dash_code, inner_diameter, cross_section, dataset_id)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     );
@@ -195,7 +195,7 @@ function importJsonToV3Tables() {
   if (existsSync(materialsPath)) {
     const materialsData = require(materialsPath);
     const insertMaterial = db.prepare(
-      `INSERT OR IGNORE INTO material_grade
+      `INSERT OR REPLACE INTO material_grade
        (material_id, standard_id, revision_id, grade_code, grade_name, material_family, heat_treatment_state,
         density, elastic_modulus, shear_modulus, yield_strength, tensile_strength, elongation, temp_min, temp_max,
         dataset_id, notes)
@@ -203,19 +203,19 @@ function importJsonToV3Tables() {
     );
 
     const insertPropertySet = db.prepare(
-      `INSERT OR IGNORE INTO material_property_set
+      `INSERT OR REPLACE INTO material_property_set
        (property_set_id, material_id, condition_label, test_temperature_c, source_id, note)
        VALUES (?, ?, ?, ?, ?, ?)`
     );
 
     const insertProperty = db.prepare(
-      `INSERT OR IGNORE INTO material_property
+      `INSERT OR REPLACE INTO material_property
        (property_set_id, property_code, numeric_value, text_value, unit_code)
        VALUES (?, ?, ?, ?, ?)`
     );
 
     const insertEquivalent = db.prepare(
-      `INSERT OR IGNORE INTO material_equivalent
+      `INSERT OR REPLACE INTO material_equivalent
        (material_id, external_system_code, external_grade_code, equivalence_level, note)
        VALUES (?, ?, ?, ?, ?)`
     );
@@ -295,7 +295,7 @@ function importJsonToV3Tables() {
   // Seed common standard spur/helical modules used by catalog products
   const commonModules = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
   const insertGearModule = db.prepare(
-    `INSERT OR IGNORE INTO gear_module_standard
+    `INSERT OR REPLACE INTO gear_module_standard
      (gear_module_id, standard_id, revision_id, gear_type, pressure_angle_deg, helix_angle_deg, module_value, module_system, dataset_id, note)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );

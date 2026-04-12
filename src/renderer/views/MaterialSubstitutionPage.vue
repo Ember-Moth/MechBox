@@ -51,13 +51,16 @@ const substitutions = computed(() => {
   if (!currentMat.value) return []
   const mat = currentMat.value
   
+  // Prevent division by zero
+  if (mat.yield_strength === 0 || mat.tensile_strength === 0) return []
+
   return materials.value
     .filter(m => m.material_id !== mat.material_id)
     .map(m => ({
       ...m,
-      yieldDiff: mat.yield_strength > 0 ? ((m.yield_strength - mat.yield_strength) / mat.yield_strength * 100).toFixed(1) : '—',
-      tensileDiff: mat.tensile_strength > 0 ? ((m.tensile_strength - mat.tensile_strength) / mat.tensile_strength * 100).toFixed(1) : '—',
-      matchScore: mat.yield_strength > 0 ? 100 - Math.abs(m.yield_strength - mat.yield_strength) / mat.yield_strength * 100 : 0
+      yieldDiff: ((m.yield_strength - mat.yield_strength) / mat.yield_strength * 100).toFixed(1),
+      tensileDiff: ((m.tensile_strength - mat.tensile_strength) / mat.tensile_strength * 100).toFixed(1),
+      matchScore: 100 - Math.abs(m.yield_strength - mat.yield_strength) / mat.yield_strength * 100
     }))
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, 5)

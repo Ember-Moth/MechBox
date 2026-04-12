@@ -7,6 +7,305 @@ import { startWebSocketServer, stopWebSocketServer } from "./services/websocket-
 
 let db: any;
 
+type OringRecommendationInput = {
+  standard?: string;
+  dashCode?: string;
+  crossSection?: number;
+  application?: "radial-outer" | "radial-inner" | "axial";
+  medium?: string;
+  temperatureC?: number;
+  pressureMpa?: number;
+  pressurePsi?: number;
+  hardness?: number;
+  clearanceMm?: number;
+};
+
+const MM_PER_INCH = 25.4;
+const PSI_PER_MPA = 145.0377377;
+
+const ORING_STANDARD_MAP: Record<string, string> = {
+  AS568: "std_as568",
+  SAE_AS568: "std_as568",
+  STD_AS568: "std_as568",
+  JIS_B_2401: "std_jis_b_2401",
+  JISB2401: "std_jis_b_2401",
+  STD_JIS_B_2401: "std_jis_b_2401",
+};
+
+const MATERIAL_RATING_SCORE: Record<string, number> = {
+  good: 4,
+  excellent: 4,
+  fair: 3,
+  questionable: 2,
+  poor: 1,
+  insufficient_data: 0,
+  not_listed: 0,
+};
+
+function normalizeOringStandard(standard?: string): string | undefined {
+  if (!standard) return undefined;
+  const key = standard.replace(/[^a-zA-Z0-9]+/g, "_").toUpperCase();
+  return ORING_STANDARD_MAP[key] ?? standard;
+}
+
+function toMm(valueInInch?: number | null): number | null {
+  if (typeof valueInInch !== "number") return null;
+  return valueInInch * MM_PER_INCH;
+}
+
+function getRuleTableByCode(ruleCode: string) {
+  return getDatabase()
+    .prepare("SELECT * FROM rule_table WHERE rule_code = ?")
+    .get(ruleCode) as any;
+}
+
+function hydrateRuleRows(ruleTableId: string) {
+  const rows = getDatabase()
+    .prepare("SELECT * FROM rule_row WHERE rule_table_id = ? ORDER BY sort_order")
+    .all(ruleTableId) as any[];
+
+  const numericStmt = getDatabase().prepare(
+    "SELECT column_code, numeric_value, unit_code FROM rule_value_numeric WHERE rule_row_id = ?",
+  );
+  const textStmt = getDatabase().prepare(
+    "SELECT column_code, text_value FROM rule_value_text WHERE rule_row_id = ?",
+  );
+
+  return rows.map((row) => {
+    const numericValues = Object.fromEntries(
+      numericStmt.all(row.rule_row_id).map((value: any) => [
+        value.column_code,
+        { value: value.numeric_value, unit: value.unit_code },
+      ]),
+    );
+    const textValues = Object.fromEntries(
+      textStmt.all(row.rule_row_id).map((value: any) => [value.column_code, value.text_value]),
+    );
+
+    return {
+      ...row,
+      numericValues,
+      textValues,
+    };
+  });
+}
+
+function getHydratedRuleTable(ruleCode: string) {
+  const table = getRuleTableByCode(ruleCode);
+  if (!table) return null;
+  return {
+    table,
+    rows: hydrateRuleRows(table.rule_table_id),
+  };
+}
+
+function findCompatibleMediumRow(
+  rows: any[],
+  medium?: string,
+): { row: any | null; matchedKey: string | null } {
+  if (!medium) return { row: null, matchedKey: null };
+
+  const normalized = medium.replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase();
+  const aliases: Record<string, string[]> = {
+    mineral_oil: ["white_oil", "diesel_oil"],
+    fuel: ["diesel_oil"],
+    water: ["water", "salt_water"],
+    steam: ["steam_under_300f", "steam_over_300f"],
+    air: [],
+  };
+  const candidates = [normalized, ...(aliases[normalized] ?? [])];
+  for (const candidate of candidates) {
+    const row = rows.find((item) => item.row_key === candidate);
+    if (row) return { row, matchedKey: candidate };
+  }
+  return { row: null, matchedKey: null };
+}
+
+function pickNearestHardness(input?: number): number {
+  if (typeof input !== "number") return 70;
+  return Math.abs(input - 90) < Math.abs(input - 70) ? 90 : 70;
+}
+
+function buildOringRecommendation(input: OringRecommendationInput) {
+  const standardId = normalizeOringStandard(input.standard) ?? "std_as568";
+  const selectedSize = input.dashCode
+    ? (getDatabase()
+        .prepare(
+          `
+          SELECT *,
+                 dash_code AS code,
+                 inner_diameter AS id,
+                 cross_section AS cs
+          FROM seal_oring_size
+          WHERE standard_id = ? AND dash_code = ?
+          `,
+        )
+        .get(standardId, input.dashCode) as any)
+    : null;
+
+  const crossSectionMm =
+    typeof input.crossSection === "number" ? input.crossSection : selectedSize?.cross_section ?? null;
+  const temperatureC = typeof input.temperatureC === "number" ? input.temperatureC : null;
+  const pressurePsi =
+    typeof input.pressurePsi === "number"
+      ? input.pressurePsi
+      : typeof input.pressureMpa === "number"
+        ? input.pressureMpa * PSI_PER_MPA
+        : 0;
+  const clearanceMm = typeof input.clearanceMm === "number" ? input.clearanceMm : null;
+  const hardnessShoreA = pickNearestHardness(input.hardness);
+
+  const materialRows = getDatabase()
+    .prepare("SELECT * FROM seal_oring_material ORDER BY material_code")
+    .all() as any[];
+
+  const compatibilityTable = getHydratedRuleTable("oring_chemical_compatibility_basic");
+  const compatibilityMatch = compatibilityTable
+    ? findCompatibleMediumRow(compatibilityTable.rows, input.medium)
+    : { row: null, matchedKey: null };
+  const compatibilityRow = compatibilityMatch.row;
+
+  const recommendedMaterials = materialRows
+    .map((material) => {
+      const rating = compatibilityRow?.textValues?.[material.material_code] ?? null;
+      const ratingScore =
+        rating && MATERIAL_RATING_SCORE[rating] !== undefined ? MATERIAL_RATING_SCORE[rating] : -1;
+      const temperatureFit =
+        temperatureC === null ||
+        ((material.temperature_min_c === null || temperatureC >= material.temperature_min_c) &&
+          (material.temperature_max_c === null || temperatureC <= material.temperature_max_c));
+      return {
+        materialCode: material.material_code,
+        materialName: material.material_name,
+        hardnessShoreA: material.hardness_shore_a,
+        temperatureMinC: material.temperature_min_c,
+        temperatureMaxC: material.temperature_max_c,
+        rating,
+        ratingScore,
+        temperatureFit,
+        notes: material.notes,
+      };
+    })
+    .sort((left, right) => {
+      if (Number(right.temperatureFit) !== Number(left.temperatureFit)) {
+        return Number(right.temperatureFit) - Number(left.temperatureFit);
+      }
+      if (right.ratingScore !== left.ratingScore) return right.ratingScore - left.ratingScore;
+      return left.materialCode.localeCompare(right.materialCode);
+    });
+
+  const topMaterial = recommendedMaterials[0] ?? null;
+  const backupRuleTable = getHydratedRuleTable("oring_backup_ring_general");
+  const backupRules = Object.fromEntries(
+    (backupRuleTable?.rows ?? []).map((row) => [row.row_key, row]),
+  ) as Record<string, any>;
+
+  const extrusionTable = getHydratedRuleTable("oring_extrusion_limit");
+  const extrusionRow =
+    extrusionTable?.rows.find((row) => {
+      const numeric = row.numericValues;
+      return (
+        numeric.hardness_shore_a?.value === hardnessShoreA &&
+        pressurePsi >= numeric.pressure_min_psi?.value &&
+        pressurePsi <= numeric.pressure_max_psi?.value
+      );
+    }) ?? null;
+
+  const clearanceMultiplier =
+    topMaterial && ["VMQ", "FVMQ"].includes(topMaterial.materialCode)
+      ? backupRules.clearance_derate_silicone?.numericValues?.clearance_multiplier?.value ?? 1
+      : 1;
+  const baseClearanceLimitIn = extrusionRow?.numericValues?.max_diametral_clearance_in?.value ?? null;
+  const effectiveClearanceLimitIn =
+    typeof baseClearanceLimitIn === "number" ? baseClearanceLimitIn * clearanceMultiplier : null;
+  const effectiveClearanceLimitMm = toMm(effectiveClearanceLimitIn);
+  const needsBackupRing =
+    clearanceMm !== null &&
+    effectiveClearanceLimitMm !== null &&
+    clearanceMm > effectiveClearanceLimitMm;
+
+  const isFaceSeal = input.application === "axial";
+  const glandTable = getHydratedRuleTable(
+    isFaceSeal ? "oring_gland_face_as568" : "oring_gland_static_radial_as568",
+  );
+  const nominalCrossSectionIn =
+    typeof crossSectionMm === "number" ? crossSectionMm / MM_PER_INCH : null;
+  const glandRow =
+    glandTable && nominalCrossSectionIn !== null
+      ? [...glandTable.rows].sort((left, right) => {
+          const deltaLeft = Math.abs((left.numericValues.nominal_cs_in?.value ?? 0) - nominalCrossSectionIn);
+          const deltaRight = Math.abs((right.numericValues.nominal_cs_in?.value ?? 0) - nominalCrossSectionIn);
+          return deltaLeft - deltaRight;
+        })[0]
+      : null;
+
+  const glandNumericValues = glandRow?.numericValues ?? {};
+  const glandMmValues = Object.fromEntries(
+    Object.entries(glandNumericValues)
+      .filter(([columnCode, value]) => columnCode.endsWith("_in") && typeof (value as any).value === "number")
+      .map(([columnCode, value]) => [columnCode.replace(/_in$/, "_mm"), (value as any).value * MM_PER_INCH]),
+  );
+
+  return {
+    selectedSize,
+    mediumKey: compatibilityMatch.matchedKey,
+    mediumLabel: compatibilityRow?.row_label ?? input.medium ?? null,
+    compatibilityRow: compatibilityRow
+      ? {
+          rowKey: compatibilityRow.row_key,
+          rowLabel: compatibilityRow.row_label,
+          ratings: compatibilityRow.textValues,
+        }
+      : null,
+    recommendedMaterials,
+    recommendedMaterial: topMaterial,
+    extrusion: extrusionRow
+      ? {
+          rowKey: extrusionRow.row_key,
+          rowLabel: extrusionRow.row_label,
+          pressurePsi,
+          pressureMpa: pressurePsi / PSI_PER_MPA,
+          hardnessShoreA,
+          inputClearanceMm: clearanceMm,
+          maxDiametralClearanceMm: effectiveClearanceLimitMm,
+          maxDiametralClearanceIn: effectiveClearanceLimitIn,
+          baseMaxDiametralClearanceIn: baseClearanceLimitIn,
+          needsBackupRing,
+          materialDeratingApplied: clearanceMultiplier !== 1,
+        }
+      : null,
+    backupRing: {
+      needed: needsBackupRing,
+      count: needsBackupRing ? 1 : 0,
+      maxDepthIncreasePct:
+        backupRules.gland_depth_increase_with_backup?.numericValues?.max_depth_increase_pct?.value ?? null,
+      clearanceMultiplier,
+      reasons: needsBackupRing
+        ? [
+            effectiveClearanceLimitMm !== null && clearanceMm !== null
+              ? `当前最大间隙 ${clearanceMm.toFixed(3)} mm 超过允许值 ${effectiveClearanceLimitMm.toFixed(3)} mm`
+              : "当前间隙超出防挤出建议值",
+          ]
+        : [],
+    },
+    gland: glandRow
+      ? {
+          mode: isFaceSeal ? "face" : "radial",
+          rowKey: glandRow.row_key,
+          rowLabel: glandRow.row_label,
+          backupRingCount: needsBackupRing ? 1 : 0,
+          valuesIn: Object.fromEntries(
+            Object.entries(glandNumericValues).map(([columnCode, value]) => [
+              columnCode,
+              (value as any).value,
+            ]),
+          ),
+          valuesMm: glandMmValues,
+        }
+      : null,
+  };
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1280,
@@ -52,18 +351,50 @@ function registerIpcHandlers() {
 
   // O-ring queries (V3)
   ipcMain.handle("db-query-oring-list", (_, standard?: string) => {
+    const standardId = normalizeOringStandard(standard);
     if (standard) {
       return getDatabase()
-        .prepare("SELECT * FROM seal_oring_size WHERE standard_id = ?")
-        .all(standard);
+        .prepare(
+          `
+          SELECT *,
+                 dash_code AS code,
+                 inner_diameter AS id,
+                 cross_section AS cs
+          FROM seal_oring_size
+          WHERE standard_id = ?
+          ORDER BY dash_code
+          `,
+        )
+        .all(standardId ?? standard);
     }
-    return getDatabase().prepare("SELECT * FROM seal_oring_size").all();
+    return getDatabase()
+      .prepare(
+        `
+        SELECT *,
+               dash_code AS code,
+               inner_diameter AS id,
+               cross_section AS cs
+        FROM seal_oring_size
+        ORDER BY standard_id, dash_code
+        `,
+      )
+      .all();
   });
 
   ipcMain.handle("db-query-oring-spec", (_, standard, code) => {
+    const standardId = normalizeOringStandard(standard) ?? standard;
     return getDatabase()
-      .prepare("SELECT * FROM seal_oring_size WHERE standard_id = ? AND dash_code = ?")
-      .get(standard, code);
+      .prepare(
+        `
+        SELECT *,
+               dash_code AS code,
+               inner_diameter AS id,
+               cross_section AS cs
+        FROM seal_oring_size
+        WHERE standard_id = ? AND dash_code = ?
+        `,
+      )
+      .get(standardId, code);
   });
 
   // 数据版本查询
@@ -183,6 +514,10 @@ function registerIpcHandlers() {
     return getDatabase().prepare("SELECT * FROM seal_oring_material").all();
   });
 
+  ipcMain.handle("db-query-oring-recommendation", (_, input: OringRecommendationInput) => {
+    return buildOringRecommendation(input ?? {});
+  });
+
   // 材料等效/代换
   ipcMain.handle("db-query-material-equivalents", (_, materialId?: string) => {
     if (materialId) {
@@ -237,14 +572,7 @@ function registerIpcHandlers() {
   // 规则表
   ipcMain.handle("db-query-rules", (_, ruleCode?: string) => {
     if (ruleCode) {
-      const ruleTable = getDatabase()
-        .prepare("SELECT * FROM rule_table WHERE rule_code = ?")
-        .get(ruleCode);
-      if (!ruleTable) return null;
-      const rows = getDatabase()
-        .prepare("SELECT * FROM rule_row WHERE rule_table_id = ? ORDER BY sort_order")
-        .all(ruleTable.rule_table_id);
-      return { table: ruleTable, rows };
+      return getHydratedRuleTable(ruleCode);
     }
     return getDatabase().prepare("SELECT * FROM rule_table").all();
   });

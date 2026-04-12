@@ -17,8 +17,9 @@ const bearingParams = ref({ nominalLoad: 2.0, loadStdDev: 0.3, nominalSpeed: 150
 const toleranceStackParams = ref({ dimensions: [{ nominal: 50, tolerance: 0.1, name: '轴径' }, { nominal: 0.05, tolerance: 0.02, name: '轴承间隙' }, { nominal: -50, tolerance: 0.1, name: '孔径' }], numSamples: 100000 })
 
 const histogramData = computed(() => {
-  if (!simResult.value?.histogram) return null
-  const maxCount = Math.max(...simResult.value.histogram.map((h: any) => h.count))
+  if (!simResult.value?.histogram || simResult.value.histogram.length === 0) return null
+  const counts = simResult.value.histogram.map((h: any) => h.count)
+  const maxCount = Math.max(...counts)
   if (maxCount === 0) return null
   return simResult.value.histogram.map((h: any) => ({ ...h, height: (h.count / maxCount) * 100 }))
 })

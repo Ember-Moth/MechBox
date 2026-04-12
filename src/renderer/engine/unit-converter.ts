@@ -73,10 +73,7 @@ export const unitDefinitions: Record<UnitCategory, Record<string, UnitDefinition
 
 /**
  * 单位换算
- * @param value 数值
- * @param category 单位类别
- * @param fromUnit 源单位
- * @param toUnit 目标单位
+ * 针对温度等非线性单位，采用直接转换路径避免浮点漂移 (Section 13.2)
  */
 export const convertUnit = (
   value: number,
@@ -88,9 +85,43 @@ export const convertUnit = (
   if (!defs[fromUnit] || !defs[toUnit]) {
     throw new Error(`Unsupported unit: ${fromUnit} or ${toUnit} in category ${category}`)
   }
-  
+
+  // 温度单位特殊处理：直接转换避免浮点漂移 (Section 13.2)
+  if (category === 'temperature') {
+    return convertTemperature(value, fromUnit, toUnit)
+  }
+
   const baseValue = defs[fromUnit].toBase(value)
   return defs[toUnit].fromBase(baseValue)
+}
+
+// 温度直接转换表 (避免经过开尔文中间转换的浮点漂移)
+const tempDirect: Record<string, Record<string, (v: number) => number>> = {
+  '°C': {
+    '°C': v => v,
+    '°F': v => v * 9/5 + 32,
+    'K': v => v + 273.15,
+  },
+  '°F': {
+    '°C': v => (v - 32) * 5/9,
+    '°F': v => v,
+    'K': v => (v - 32) * 5/9 + 273.15,
+  },
+  'K': {
+    '°C': v => v - 273.15,
+    '°F': v => (v - 273.15) * 9/5 + 32,
+    'K': v => v,
+  },
+}
+
+const convertTemperature = (value: number, from: string, to: string): number => {
+  const converter = tempDirect[from]?.[to]
+  if (!converter) {
+    // Fallback to base conversion if direct path not found
+    const defs = unitDefinitions.temperature
+    return defs[to].fromBase(defs[from].toBase(value))
+  }
+  return converter(value)
 }
 
 /**
