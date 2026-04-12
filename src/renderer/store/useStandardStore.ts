@@ -44,21 +44,32 @@ export const useStandardStore = defineStore("standard", {
     },
     
     async getITValue(grade: string, sizeIndex: number): Promise<number | null> {
-      const res = await window.electron.db.queryITGrade(grade, sizeIndex);
-      return res ? res.value / 1000 : null;
+      // Use static ISO 286 data directly (Section 13 fix: removed broken IPC calls)
+      const grades = this.iso286Static.it_grades;
+      if (!grades) return null;
+      
+      const gradeData = grades[grade];
+      if (!gradeData || sizeIndex < 0 || sizeIndex >= gradeData.length) return null;
+      
+      return gradeData[sizeIndex]; // Value is in μm
     },
-    
+
     async getFundamentalDeviation(
       type: "holes" | "shafts",
       position: string,
       sizeIndex: number,
     ): Promise<number | null> {
-      const res = await window.electron.db.queryDeviation(
-        type,
-        position,
-        sizeIndex,
-      );
-      return res ? res.value / 1000 : null;
+      // Use static ISO 286 data directly (Section 13 fix: removed broken IPC calls)
+      const deviations = type === "holes" 
+        ? this.iso286Static.fundamental_deviations_holes 
+        : this.iso286Static.fundamental_deviations_shafts;
+      
+      if (!deviations) return null;
+      
+      const posData = deviations[position];
+      if (!posData || sizeIndex < 0 || sizeIndex >= posData.length) return null;
+      
+      return posData[sizeIndex]; // Value is in μm
     },
     
     // Data fetching
