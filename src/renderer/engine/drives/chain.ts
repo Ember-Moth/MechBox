@@ -82,7 +82,7 @@ export const calcChainDrive = (params: ChainDriveParams): CalcResult<ChainDriveR
       value: {
         transmissionRatio, recommendedChain, chainPitch,
         smallSprocketTeeth, largeSprocketTeeth, chainSpeed: 0,
-        chainLength: 0, actualCenterDistance: 0, effectivePull: 0
+        chainLength: 0, actualCenterDistance: 0, effectivePull: 0, warnings
       },
       unit: '',
       warnings
@@ -121,7 +121,8 @@ export const calcChainDrive = (params: ChainDriveParams): CalcResult<ChainDriveR
       chainSpeed,
       chainLength,
       actualCenterDistance,
-      effectivePull
+      effectivePull,
+      warnings
     },
     unit: '',
     warnings

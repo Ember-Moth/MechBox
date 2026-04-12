@@ -35,6 +35,13 @@ const selectedBolt = computed(() => {
   return boltList.value.find(b => b.designation === selectedDesignation.value)
 })
 
+const nominalDiameter = computed(() => selectedBolt.value?.nominal_d ?? extractDiameter(selectedDesignation.value))
+const stressArea = computed(() => {
+  if (selectedBolt.value?.stress_area) return selectedBolt.value.stress_area
+  const d = nominalDiameter.value
+  return d > 0 ? Math.PI * d * d / 4 : 0
+})
+
 const preloadResult = computed(() => {
   return calcPreload(conditions.value.torque, extractDiameter(selectedDesignation.value), conditions.value.torqueCoeff)
 })
@@ -48,9 +55,9 @@ const stressResult = computed(() => {
 const vdi2230Result = computed(() => {
   if (!selectedBolt.value || conditions.value.torque <= 0) return null
   return calcVDI2230({
-    boltDiameter: selectedBolt.value.d,
+    boltDiameter: nominalDiameter.value,
     boltClass: propertyClass.value,
-    preloadForce: preloadResult.value,
+    preloadForce: preloadResult.value.value,
     axialWorkingForce: conditions.value.axialForce,
     shearWorkingForce: conditions.value.shearForce,
     cycles: 100000,  // 假设10万次循环
@@ -67,6 +74,7 @@ const inputErrors = computed(() => ({
 }))
 
 const isValid = computed(() => Object.values(inputErrors.value).every(e => !e))
+const visibleInputErrors = computed(() => Object.values(inputErrors.value).filter(Boolean))
 
 const recommendedTorque = computed(() => {
   return recommendTorque(selectedDesignation.value, propertyClass.value)
@@ -107,7 +115,7 @@ function toggleFavorite() {
       propertyClass: propertyClass.value,
       conditions: { ...conditions.value },
       results: {
-        preload: preloadResult.value,
+        preload: preloadResult.value.value,
         stress: stressResult.value?.value.von_mises
       }
     })
@@ -175,7 +183,7 @@ function printReport() {
               <a-form-item label="选择螺栓规格">
                 <a-select v-model:value="selectedDesignation" show-search style="width: 100%">
                   <a-select-option v-for="b in boltList" :key="b.designation" :value="b.designation">
-                    {{ b.designation }} (d={{ b.d }}mm, 应力面积={{ b.stress_area?.toFixed(1) }}mm²)
+                    {{ b.designation }} (d={{ b.nominal_d }}mm, 对边={{ b.head_width_s }}mm)
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -227,7 +235,7 @@ function printReport() {
             <template #message>输入参数有误</template>
             <template #description>
               <ul style="margin: 4px 0 0 16px; padding: 0">
-                <li v-for="(msg, key) in inputErrors" :key="key" v-if="msg">{{ msg }}</li>
+                <li v-for="(msg, key) in visibleInputErrors" :key="key">{{ msg }}</li>
               </ul>
             </template>
           </a-alert>
@@ -235,9 +243,9 @@ function printReport() {
           <a-card title="螺栓参数与强度校核" size="small" v-if="selectedBolt && stressResult">
             <a-descriptions bordered size="small" :column="2" title="螺栓规格参数">
               <a-descriptions-item label="规格">{{ selectedBolt.designation }}</a-descriptions-item>
-              <a-descriptions-item label="标准">{{ selectedBolt.standard || 'GB/T 5782' }}</a-descriptions-item>
-              <a-descriptions-item label="公称直径">{{ selectedBolt.d }} mm</a-descriptions-item>
-              <a-descriptions-item label="应力截面积">{{ selectedBolt.stress_area?.toFixed(1) }} mm²</a-descriptions-item>
+              <a-descriptions-item label="标准">{{ selectedBolt.standard_id || 'std_gbt_5782' }}</a-descriptions-item>
+              <a-descriptions-item label="公称直径">{{ nominalDiameter.toFixed(1) }} mm</a-descriptions-item>
+              <a-descriptions-item label="应力截面积">{{ stressArea.toFixed(1) }} mm²</a-descriptions-item>
               <a-descriptions-item label="对边宽度">{{ selectedBolt.head_width_s }} mm</a-descriptions-item>
               <a-descriptions-item label="头部高度">{{ selectedBolt.head_height_k }} mm</a-descriptions-item>
             </a-descriptions>
@@ -245,7 +253,7 @@ function printReport() {
             <a-divider />
 
             <div class="result-section">
-              <div class="result-column-header">预紧力计算</div>
+                <div class="result-column-header">预紧力计算</div>
               <div class="result-grid">
                 <div class="res-label">预紧扭矩</div>
                 <div class="res-value">{{ conditions.torque }} N·m</div>

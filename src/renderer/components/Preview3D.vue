@@ -16,8 +16,23 @@ const containerRef = ref<HTMLElement | null>(null)
 let renderer: THREE.WebGLRenderer | null = null
 let camera: THREE.PerspectiveCamera | null = null
 let scene: THREE.Scene | null = null
-let mesh: THREE.Mesh | null = null
+let previewObject: THREE.Object3D | null = null
 let animationId: number = 0
+
+function disposeObject(object: THREE.Object3D) {
+  object.traverse((child) => {
+    const meshChild = child as THREE.Mesh
+    if (meshChild.geometry) {
+      meshChild.geometry.dispose()
+    }
+    const material = meshChild.material
+    if (Array.isArray(material)) {
+      material.forEach((item) => item.dispose())
+    } else if (material) {
+      material.dispose()
+    }
+  })
+}
 
 function initScene() {
   if (!containerRef.value) return
@@ -56,29 +71,23 @@ function updateModel() {
   if (!scene) return
   
   // 移除旧模型
-  if (mesh) {
-    scene.remove(mesh)
-    mesh.geometry.dispose()
-    if (Array.isArray(mesh.material)) mesh.material.forEach(m => m.dispose())
-    else mesh.material.dispose()
+  if (previewObject) {
+    scene.remove(previewObject)
+    disposeObject(previewObject)
+    previewObject = null
   }
   
   let geometry: THREE.BufferGeometry
+  let object: THREE.Object3D | null = null
   
   switch (props.type) {
     case 'bearing': {
       const d = (props.params.d || 25) / 100
       const D = (props.params.D || 52) / 100
-      const B = (props.params.B || 15) / 100
-      
-      // 外环
-      const outerGeo = new THREE.TorusGeometry(D / 2, (D - d) / 4, 16, 32, B / ((D - d) / 2) * Math.PI * 2 / (2 * Math.PI))
-      const mat = new THREE.MeshPhongMaterial({ color: 0x666666, metalness: 0.8, shininess: 100 })
-      mesh = new THREE.Mesh(outerGeo, mat)
-      
-      // 简化为圆环
-      const ringGeo = new THREE.TorusGeometry((d + D) / 4, (D - d) / 4, 16, 32)
-      mesh = new THREE.Mesh(ringGeo, mat)
+      const thickness = Math.max((D - d) / 4, 0.02)
+      const ringGeo = new THREE.TorusGeometry((d + D) / 4, thickness, 24, 64)
+      const mat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.8, roughness: 0.25 })
+      object = new THREE.Mesh(ringGeo, mat)
       break
     }
     case 'gear': {
@@ -107,8 +116,8 @@ function updateModel() {
       
       const extrudeSettings = { depth: b, bevelEnabled: true, bevelThickness: 0.005, bevelSize: 0.005 }
       geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
-      const mat = new THREE.MeshPhongMaterial({ color: 0xcc8844, metalness: 0.6, shininess: 80 })
-      mesh = new THREE.Mesh(geometry, mat)
+      const mat = new THREE.MeshStandardMaterial({ color: 0xcc8844, metalness: 0.6, roughness: 0.35 })
+      object = new THREE.Mesh(geometry, mat)
       break
     }
     case 'bolt': {
@@ -120,7 +129,7 @@ function updateModel() {
       const headGeo = new THREE.CylinderGeometry(d / 1.5, d / 1.5, h, 6)
       const shaftGeo = new THREE.CylinderGeometry(d / 2, d / 2, l - h, 16)
       
-      const mat = new THREE.MeshPhongMaterial({ color: 0x888888, metalness: 0.7, shininess: 100 })
+      const mat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.3 })
       const head = new THREE.Mesh(headGeo, mat)
       head.position.y = h / 2
       const shaft = new THREE.Mesh(shaftGeo, mat)
@@ -129,45 +138,47 @@ function updateModel() {
       const group = new THREE.Group()
       group.add(head)
       group.add(shaft)
-      scene.add(group)
-      mesh = group as any
-      return
+      object = group
+      break
     }
     case 'spring': {
       const d = (props.params.d || 2) / 100
       const D = (props.params.D || 16) / 100
       const n = props.params.n || 10
-      
-      const curve = new THREE.Curve<THREE.Vector3>()
-      curve.getPoint = (t: number) => {
+      const freeLength = (props.params.freeLength || props.params.L0 || 100) / 100
+      const points = Array.from({ length: n * 24 + 1 }, (_, index) => {
+        const t = index / (n * 24)
         const angle = t * n * Math.PI * 2
         return new THREE.Vector3(
           Math.cos(angle) * D / 2,
-          t * l - l / 2,
+          t * freeLength - freeLength / 2,
           Math.sin(angle) * D / 2
         )
-      }
-      
-      geometry = new THREE.TubeGeometry(curve as any, n * 32, d / 4, 8, false)
-      const mat = new THREE.MeshPhongMaterial({ color: 0x4488cc, metalness: 0.5, shininess: 90 })
-      mesh = new THREE.Mesh(geometry, mat)
+      })
+      const curve = new THREE.CatmullRomCurve3(points)
+      geometry = new THREE.TubeGeometry(curve, n * 32, d / 4, 8, false)
+      const mat = new THREE.MeshStandardMaterial({ color: 0x4488cc, metalness: 0.5, roughness: 0.35 })
+      object = new THREE.Mesh(geometry, mat)
       break
     }
     default: {
       geometry = new THREE.SphereGeometry(0.5, 32, 32)
-      const mat = new THREE.MeshPhongMaterial({ color: 0x888888 })
-      mesh = new THREE.Mesh(geometry, mat)
+      const mat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4 })
+      object = new THREE.Mesh(geometry, mat)
     }
   }
   
-  if (mesh) scene.add(mesh)
+  if (object) {
+    previewObject = object
+    scene.add(previewObject)
+  }
 }
 
 function animate() {
   animationId = requestAnimationFrame(animate)
-  if (mesh) {
-    mesh.rotation.y += 0.005
-    mesh.rotation.x += 0.002
+  if (previewObject) {
+    previewObject.rotation.y += 0.005
+    previewObject.rotation.x += 0.002
   }
   renderer?.render(scene!, camera!)
 }
@@ -195,6 +206,10 @@ watch(() => props.params, () => {
 onBeforeUnmount(() => {
   cancelAnimationFrame(animationId)
   window.removeEventListener('resize', onResize)
+  if (previewObject) {
+    disposeObject(previewObject)
+    previewObject = null
+  }
   renderer?.dispose()
 })
 </script>

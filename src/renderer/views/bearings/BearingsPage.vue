@@ -2,8 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStandardStore } from '../../store/useStandardStore'
 import { calcLife, calcEquivalentLoad } from '../../engine/bearings/life'
-import { calcISO281Life, calcKappa, getA1Factor } from '../../engine/bearings/iso281'
-import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
+import { calcISO281Life, calcKappa } from '../../engine/bearings/iso281'
+import { FilePdfOutlined, PrinterOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import Preview3D from '../../components/Preview3D.vue'
@@ -43,17 +43,18 @@ const inputErrors = computed(() => ({
 }))
 
 const isValid = computed(() => Object.values(inputErrors.value).every(e => !e))
+const visibleInputErrors = computed(() => Object.values(inputErrors.value).filter(Boolean))
 
 const results = computed(() => {
   if (!selectedBearing.value || conditions.value.speed <= 0) return null
 
   const P = calcEquivalentLoad(conditions.value.Fr, conditions.value.Fa, conditions.value.X, conditions.value.Y)
-  const life = calcLife(selectedBearing.value.C_r, P, 'ball', conditions.value.speed)
+  const life = calcLife(selectedBearing.value.dynamic_load_rating / 1000, P, 'ball', conditions.value.speed)
   
   // ISO 281 修正寿命计算 (Section 10.2)
   const kappa = calcKappa(32, 16)  // 简化假设: 工作粘度32, 额定粘度16
   const iso281 = calcISO281Life({
-    C_r: selectedBearing.value.C_r,
+    C_r: selectedBearing.value.dynamic_load_rating / 1000,
     P,
     n: conditions.value.speed,
     bearingType: 'ball',
@@ -62,7 +63,7 @@ const results = computed(() => {
     eta_c: 0.8  // 正常污染水平
   })
 
-  return { P, life, iso281 }
+  return { P, life, iso281, kappa }
 })
 
 async function exportPDF() {
@@ -163,7 +164,7 @@ function printReport() {
             <template #message>输入参数有误</template>
             <template #description>
               <ul style="margin: 4px 0 0 16px; padding: 0">
-                <li v-for="(msg, key) in inputErrors" :key="key" v-if="msg">{{ msg }}</li>
+                <li v-for="(msg, key) in visibleInputErrors" :key="key">{{ msg }}</li>
               </ul>
             </template>
           </a-alert>
@@ -176,10 +177,10 @@ function printReport() {
               <a-descriptions-item label="外径 D">{{ selectedBearing.outer_diameter }} mm</a-descriptions-item>
               <a-descriptions-item label="宽度 B">{{ selectedBearing.width }} mm</a-descriptions-item>
               <a-descriptions-item label="质量">{{ selectedBearing.mass }} kg</a-descriptions-item>
-              <a-descriptions-item label="额定动载荷 Cr">{{ selectedBearing.C_r }} kN</a-descriptions-item>
-              <a-descriptions-item label="额定静载荷 C0r">{{ selectedBearing.C_0r }} kN</a-descriptions-item>
-              <a-descriptions-item label="脂润滑极限">{{ selectedBearing.speed_limit_grease }} rpm</a-descriptions-item>
-              <a-descriptions-item label="油润滑极限">{{ selectedBearing.speed_limit_oil }} rpm</a-descriptions-item>
+              <a-descriptions-item label="额定动载荷 Cr">{{ (selectedBearing.dynamic_load_rating / 1000).toFixed(2) }} kN</a-descriptions-item>
+              <a-descriptions-item label="额定静载荷 C0r">{{ (selectedBearing.static_load_rating / 1000).toFixed(2) }} kN</a-descriptions-item>
+              <a-descriptions-item label="脂润滑极限">{{ selectedBearing.grease_speed_limit }} rpm</a-descriptions-item>
+              <a-descriptions-item label="油润滑极限">{{ selectedBearing.oil_speed_limit }} rpm</a-descriptions-item>
             </a-descriptions>
 
             <!-- Section 4.1: 3D parameterized visualization -->
@@ -202,7 +203,7 @@ function printReport() {
               <a-divider>ISO 281 修正额定寿命</a-divider>
               <div class="result-grid">
                 <div class="res-label">润滑膜厚度比 κ</div>
-                <div class="res-value">{{ results.iso281.value.warnings.find(w => w.level === 'info') ? '—' : '1.0' }}</div>
+                <div class="res-value">{{ results.kappa.toFixed(2) }}</div>
                 <div class="res-label">修正系数 a_ISO</div>
                 <div class="res-value">{{ results.iso281.value.a_ISO.toFixed(2) }}</div>
                 <div class="res-label">修正寿命 L10m [百万转]</div>

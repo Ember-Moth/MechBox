@@ -3,7 +3,23 @@
  * Section 1.3.2 - 本地超高频蒙特卡洛模拟
  */
 
-self.onmessage = function (e) {
+interface DistributionParams {
+  mean: number
+  stdDev: number
+  distribution?: 'normal' | 'uniform' | 'triangular' | string
+  min?: number
+  max?: number
+  mode?: number
+}
+
+interface MonteCarloWorkerMessage {
+  computeFn: (params: Record<string, number>) => number
+  inputDistributions: Record<string, DistributionParams>
+  numSamples: number
+  specLimits?: { lower: number; upper: number }
+}
+
+self.onmessage = function (e: MessageEvent<MonteCarloWorkerMessage>) {
   const { computeFn, inputDistributions, numSamples, specLimits } = e.data
 
   // Box-Muller 变换生成正态分布随机数
@@ -15,7 +31,7 @@ self.onmessage = function (e) {
   }
 
   // 生成指定分布的随机数
-  function generateRandom(params) {
+  function generateRandom(params: DistributionParams): number {
     const dist = params.distribution || 'normal'
     switch (dist) {
       case 'normal':
@@ -47,7 +63,7 @@ self.onmessage = function (e) {
 
   // 执行模拟
   for (let i = 0; i < numSamples; i++) {
-    const params = {}
+    const params: Record<string, number> = {}
     for (const name of paramNames) {
       params[name] = generateRandom(inputDistributions[name])
     }
@@ -63,17 +79,17 @@ self.onmessage = function (e) {
   // 计算良品率
   let yieldRate = 100
   if (specLimits) {
-    const withinSpec = sorted.filter(v => v >= specLimits.lower && v <= specLimits.upper)
+    const withinSpec = sorted.filter((v) => v >= specLimits.lower && v <= specLimits.upper)
     yieldRate = (withinSpec.length / sorted.length) * 100
   }
 
   // 构建直方图 (50 bins)
   const numBins = 50
   const binWidth = (sorted[sorted.length - 1] - sorted[0]) / numBins
-  const histogram = []
+  const histogram: Array<{ bin: number; count: number }> = []
   for (let i = 0; i < numBins; i++) {
     const binStart = sorted[0] + i * binWidth
-    const count = sorted.filter(v => v >= binStart && v < binStart + binWidth).length
+    const count = sorted.filter((v) => v >= binStart && v < binStart + binWidth).length
     histogram.push({ bin: binStart, count })
   }
 

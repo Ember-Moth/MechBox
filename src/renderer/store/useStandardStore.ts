@@ -9,6 +9,10 @@ export interface FavoriteItem {
   createdAt: number;
 }
 
+type ITGradeCode = keyof typeof iso286Data.it_grades;
+type HoleDeviationCode = keyof typeof iso286Data.fundamental_deviations.holes;
+type ShaftDeviationCode = keyof typeof iso286Data.fundamental_deviations.shafts;
+
 export const useStandardStore = defineStore("standard", {
   state: () => ({
     // Static data
@@ -48,7 +52,8 @@ export const useStandardStore = defineStore("standard", {
       const grades = this.iso286Static.it_grades;
       if (!grades) return null;
       
-      const gradeData = grades[grade];
+      const gradeKey = grade as ITGradeCode;
+      const gradeData = grades[gradeKey];
       if (!gradeData || sizeIndex < 0 || sizeIndex >= gradeData.length) return null;
       
       return gradeData[sizeIndex]; // Value is in μm
@@ -60,13 +65,10 @@ export const useStandardStore = defineStore("standard", {
       sizeIndex: number,
     ): Promise<number | null> {
       // Use static ISO 286 data directly (Section 13 fix: removed broken IPC calls)
-      const deviations = type === "holes" 
-        ? this.iso286Static.fundamental_deviations_holes 
-        : this.iso286Static.fundamental_deviations_shafts;
-      
-      if (!deviations) return null;
-      
-      const posData = deviations[position];
+      const posData =
+        type === "holes"
+          ? this.iso286Static.fundamental_deviations.holes[position as HoleDeviationCode]
+          : this.iso286Static.fundamental_deviations.shafts[position as ShaftDeviationCode];
       if (!posData || sizeIndex < 0 || sizeIndex >= posData.length) return null;
       
       return posData[sizeIndex]; // Value is in μm

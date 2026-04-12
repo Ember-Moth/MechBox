@@ -24,7 +24,7 @@ const bucklingResult = computed(() => calcSpringBuckling({
   freeLength: params.value.freeLength,
   meanDiameter: params.value.meanDiameter,
   endCondition: params.value.endCondition,
-  workingDeflection: result.value.deflection
+  workingDeflection: result.value.value.deflection
 }))
 
 async function exportPDF() {

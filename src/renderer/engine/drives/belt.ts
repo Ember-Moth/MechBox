@@ -103,7 +103,8 @@ export const calcVBel = (params: BeltDriveParams): CalcResult<BeltDriveResult> =
       largePulleyDiameter,
       wrapAngle,
       beltLength,
-      effectivePull
+      effectivePull,
+      warnings
     },
     unit: '',
     warnings

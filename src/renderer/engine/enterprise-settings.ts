@@ -4,6 +4,11 @@
  */
 
 export interface EnterpriseSettings {
+  // 基础设置
+  language: 'zh-CN' | 'en-US'
+  theme: 'light' | 'dark'
+  showWelcomeOnStart: boolean
+
   // 9.1 求解器与引擎调优
   globalSafetyFactor: number     // 全局安全系数 (1.5 ~ 3.0)
   solverMaxIterations: number    // 最大迭代次数 (10 ~ 1000)
@@ -28,6 +33,10 @@ export interface EnterpriseSettings {
 }
 
 export const defaultEnterpriseSettings: EnterpriseSettings = {
+  language: 'zh-CN',
+  theme: 'light',
+  showWelcomeOnStart: true,
+
   globalSafetyFactor: 1.5,
   solverMaxIterations: 100,
   solverTolerance: 1e-8,

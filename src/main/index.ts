@@ -276,6 +276,10 @@ function buildOringRecommendation(input: OringRecommendationInput) {
       : getNumericWindow("oring_squeeze_pct", "static_male_female");
   const stretchWindow = getNumericWindow("oring_stretch_pct", "general");
   const fillWindow = { max: 85 };
+  const squeezeMin = squeezeWindow?.min ?? null;
+  const squeezeMax = squeezeWindow?.max ?? null;
+  const stretchMin = stretchWindow?.min ?? null;
+  const stretchMax = stretchWindow?.max ?? null;
   const candidateLimit =
     typeof input.candidateLimit === "number" && input.candidateLimit > 0 ? input.candidateLimit : 8;
 
@@ -297,19 +301,19 @@ function buildOringRecommendation(input: OringRecommendationInput) {
             const fillPct =
               (Math.PI * Math.pow(size.cs / 2, 2)) / (grooveDepthMm * grooveWidthMm) * 100;
             const compressionPenalty =
-              squeezeWindow && squeezeWindow.min !== null && squeezeWindow.max !== null
-                ? compressionPct < squeezeWindow.min
-                  ? squeezeWindow.min - compressionPct
-                  : compressionPct > squeezeWindow.max
-                    ? compressionPct - squeezeWindow.max
+              squeezeMin !== null && squeezeMax !== null
+                ? compressionPct < squeezeMin
+                  ? squeezeMin - compressionPct
+                  : compressionPct > squeezeMax
+                    ? compressionPct - squeezeMax
                     : 0
                 : 0;
             const stretchPenalty =
-              stretchWindow && stretchWindow.min !== null && stretchWindow.max !== null
-                ? stretchPct < stretchWindow.min
-                  ? stretchWindow.min - stretchPct
-                  : stretchPct > stretchWindow.max
-                    ? stretchPct - stretchWindow.max
+              stretchMin !== null && stretchMax !== null
+                ? stretchPct < stretchMin
+                  ? stretchMin - stretchPct
+                  : stretchPct > stretchMax
+                    ? stretchPct - stretchMax
                     : 0
                 : 0;
             const fillPenalty = fillPct > fillWindow.max ? fillPct - fillWindow.max : 0;
@@ -323,20 +327,20 @@ function buildOringRecommendation(input: OringRecommendationInput) {
               selectedBonus;
             const reasons: string[] = [];
 
-            if (squeezeWindow?.min !== null && squeezeWindow?.max !== null) {
-              if (compressionPct < squeezeWindow.min) {
+            if (squeezeMin !== null && squeezeMax !== null) {
+              if (compressionPct < squeezeMin) {
                 reasons.push(`压缩率偏低 ${compressionPct.toFixed(1)}%`);
-              } else if (compressionPct > squeezeWindow.max) {
+              } else if (compressionPct > squeezeMax) {
                 reasons.push(`压缩率偏高 ${compressionPct.toFixed(1)}%`);
               } else {
                 reasons.push(`压缩率命中 ${compressionPct.toFixed(1)}%`);
               }
             }
 
-            if (stretchWindow?.min !== null && stretchWindow?.max !== null) {
-              if (stretchPct < stretchWindow.min) {
+            if (stretchMin !== null && stretchMax !== null) {
+              if (stretchPct < stretchMin) {
                 reasons.push(`拉伸率偏低 ${stretchPct.toFixed(1)}%`);
-              } else if (stretchPct > stretchWindow.max) {
+              } else if (stretchPct > stretchMax) {
                 reasons.push(`拉伸率偏高 ${stretchPct.toFixed(1)}%`);
               } else {
                 reasons.push(`拉伸率命中 ${stretchPct.toFixed(1)}%`);
@@ -363,15 +367,15 @@ function buildOringRecommendation(input: OringRecommendationInput) {
               fillPct,
               score,
               withinCompression:
-                squeezeWindow?.min !== null &&
-                squeezeWindow?.max !== null &&
-                compressionPct >= squeezeWindow.min &&
-                compressionPct <= squeezeWindow.max,
+                squeezeMin !== null &&
+                squeezeMax !== null &&
+                compressionPct >= squeezeMin &&
+                compressionPct <= squeezeMax,
               withinStretch:
-                stretchWindow?.min !== null &&
-                stretchWindow?.max !== null &&
-                stretchPct >= stretchWindow.min &&
-                stretchPct <= stretchWindow.max,
+                stretchMin !== null &&
+                stretchMax !== null &&
+                stretchPct >= stretchMin &&
+                stretchPct <= stretchMax,
               withinFill: fillPct <= fillWindow.max,
               reasons,
             };

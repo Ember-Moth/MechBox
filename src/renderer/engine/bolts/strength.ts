@@ -55,23 +55,25 @@ export const calcPreload = (torque: number, diameter: number, K: number = 0.2): 
  * @param shearForce 剪切力 (kN)
  */
 export const calcStress = (
-  bolt: { stress_area: number, designation: string },
+  bolt: { stress_area?: number, designation: string, nominal_d?: number },
   axialForce: number,
   shearForce: number = 0
 ): CalcResult<{ tensile_stress: number, shear_stress: number, von_mises: number }> => {
   const warnings: Warning[] = []
+  const diameter = bolt.nominal_d ?? extractDiameter(bolt.designation)
+  const stressArea = bolt.stress_area ?? (diameter > 0 ? Math.PI * Math.pow(diameter, 2) / 4 : 0)
   
-  if (bolt.stress_area <= 0) {
+  if (stressArea <= 0) {
     warnings.push({ level: 'error', message: '螺栓应力截面积必须大于 0' })
     return { value: { tensile_stress: 0, shear_stress: 0, von_mises: 0 }, unit: 'MPa', warnings }
   }
   
   // 拉伸应力 σ = F / As
-  const tensile_stress = (axialForce * 1000) / bolt.stress_area // MPa
+  const tensile_stress = (axialForce * 1000) / stressArea // MPa
   
   // 剪切应力 τ = F / (π × d² / 4)
   const shear_stress = shearForce > 0 
-    ? (shearForce * 1000) / (Math.PI * Math.pow(extractDiameter(bolt.designation), 2) / 4)
+    ? (shearForce * 1000) / (Math.PI * Math.pow(diameter, 2) / 4)
     : 0
   
   // von Mises 等效应力 σ_eq = √(σ² + 3τ²)
