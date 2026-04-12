@@ -378,7 +378,9 @@ watch(
 
 <style scoped>
 .app-shell {
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+    
 }
 
 .logo {
@@ -398,6 +400,7 @@ watch(
 }
 
 .sider {
+    height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -498,12 +501,30 @@ watch(
 
 .app-content {
     margin: 0;
-    padding: 18px 18px 20px;
+    padding: 0;
     background: #eef2f7;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+.app-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.app-content::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 3px;
+}
+
+.app-content::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .page-stage {
-    min-height: calc(100vh - 88px);
+    padding: 18px 18px 20px;
+    min-height: 100%;
 }
 
 @media (max-width: 960px) {
@@ -511,7 +532,7 @@ watch(
         flex-direction: column;
     }
 
-    .app-content {
+    .page-stage {
         padding: 12px;
     }
 
@@ -538,8 +559,8 @@ watch(
         min-width: 500px;
     }
 
-    /* 内容区全宽无间距 */
-    .app-content {
+    /* 内容区紧凑 */
+    .page-stage {
         padding: 8px;
     }
 
@@ -560,7 +581,7 @@ watch(
 
 /* 超小屏 (≤480px) */
 @media (max-width: 480px) {
-    .app-content {
+    .page-stage {
         padding: 4px;
     }
 
