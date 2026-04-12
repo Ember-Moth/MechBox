@@ -11,6 +11,10 @@ import {
     SwapOutlined,
     DatabaseOutlined,
     ControlOutlined,
+    FolderOpenOutlined,
+    BarChartOutlined,
+    WarningOutlined,
+    FileSearchOutlined,
 } from "@ant-design/icons-vue";
 import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
@@ -20,6 +24,10 @@ import BearingsPage from "./views/bearings/BearingsPage.vue";
 import BoltsPage from "./views/bolts/BoltsPage.vue";
 import UnitConverterPage from "./views/UnitConverterPage.vue";
 import MaterialLibraryPage from "./views/MaterialLibraryPage.vue";
+import StandardPartsLibraryPage from "./views/StandardPartsLibraryPage.vue";
+import ParamScanPage from "./views/ParamScanPage.vue";
+import FailureDiagnosisPage from "./views/FailureDiagnosisPage.vue";
+import ProjectCenterPage from "./views/ProjectCenterPage.vue";
 import SettingsPage from "./views/SettingsPage.vue";
 import FavoritesPage from "./views/FavoritesPage.vue";
 import AboutPage from "./views/AboutPage.vue";
@@ -30,14 +38,20 @@ const selectedKeys = ref(["dashboard"]);
 
 const menuItems = [
     { key: "dashboard", icon: DashboardOutlined, label: "工作台" },
+    { key: "divider-1", type: "divider" },
     { key: "tolerances", icon: ColumnWidthOutlined, label: "公差配合" },
     { key: "seals", icon: BlockOutlined, label: "密封圈" },
     { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
     { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },
-    { key: "divider-1", type: "divider" },
+    { key: "divider-2", type: "divider" },
     { key: "units", icon: SwapOutlined, label: "单位换算" },
     { key: "materials", icon: DatabaseOutlined, label: "材料库" },
-    { key: "divider-2", type: "divider" },
+    { key: "standard-parts", icon: FileSearchOutlined, label: "标准件库" },
+    { key: "divider-3", type: "divider" },
+    { key: "param-scan", icon: BarChartOutlined, label: "参数扫描" },
+    { key: "failure-diag", icon: WarningOutlined, label: "失效诊断" },
+    { key: "projects", icon: FolderOpenOutlined, label: "项目中心" },
+    { key: "divider-4", type: "divider" },
     { key: "favorites", icon: StarOutlined, label: "我的收藏" },
     { key: "settings", icon: ControlOutlined, label: "设置" },
     { key: "about", icon: InfoCircleOutlined, label: "关于" },
@@ -119,6 +133,18 @@ onUnmounted(() => {
                         </div>
                         <div v-else-if="selectedKeys[0] === 'materials'">
                             <MaterialLibraryPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'standard-parts'">
+                            <StandardPartsLibraryPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'param-scan'">
+                            <ParamScanPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'failure-diag'">
+                            <FailureDiagnosisPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'projects'">
+                            <ProjectCenterPage />
                         </div>
                         <div v-else-if="selectedKeys[0] === 'settings'">
                             <SettingsPage />
