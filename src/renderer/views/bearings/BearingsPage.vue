@@ -31,6 +31,18 @@ const selectedBearing = computed(() => {
   return store.bearingList.find(b => b.designation === selectedDesignation.value)
 })
 
+// Section 11.3: Live input validation
+const inputErrors = computed(() => ({
+  Fr: conditions.value.Fr < 0 ? '径向载荷不能为负' : '',
+  Fa: conditions.value.Fa < 0 ? '轴向载荷不能为负' : '',
+  X: conditions.value.X < 0 || conditions.value.X > 1 ? 'X 应在 0~1 之间' : '',
+  Y: conditions.value.Y < 0 ? 'Y 不能为负' : '',
+  speed: conditions.value.speed <= 0 ? '转速必须大于 0' : conditions.value.speed > 30000 ? '转速过高，请确认轴承规格' : '',
+  temp: conditions.value.temp < -50 ? '温度过低' : conditions.value.temp > 200 ? '温度过高，请确认润滑方式' : '',
+}))
+
+const isValid = computed(() => Object.values(inputErrors.value).every(e => !e))
+
 const results = computed(() => {
   if (!selectedBearing.value || conditions.value.speed <= 0) return null
 
@@ -117,22 +129,32 @@ function printReport() {
 
               <a-divider>工况载荷 (kN)</a-divider>
               <a-row :gutter="12">
-                <a-col :span="12"><a-form-item label="径向载荷 Fr"><a-input-number v-model:value="conditions.Fr" style="width: 100%" /></a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="轴向载荷 Fa"><a-input-number v-model:value="conditions.Fa" style="width: 100%" /></a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="系数 X"><a-input-number v-model:value="conditions.X" style="width: 100%" /></a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="系数 Y"><a-input-number v-model:value="conditions.Y" style="width: 100%" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="径向载荷 Fr"><a-input-number v-model:value="conditions.Fr" :status="inputErrors.Fr ? 'error' : ''" style="width: 100%" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="轴向载荷 Fa"><a-input-number v-model:value="conditions.Fa" :status="inputErrors.Fa ? 'error' : ''" style="width: 100%" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="系数 X"><a-input-number v-model:value="conditions.X" :status="inputErrors.X ? 'error' : ''" :min="0" :max="1" style="width: 100%" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="系数 Y"><a-input-number v-model:value="conditions.Y" :status="inputErrors.Y ? 'error' : ''" :min="0" style="width: 100%" /></a-form-item></a-col>
               </a-row>
 
               <a-divider>运行参数</a-divider>
               <a-row :gutter="12">
-                <a-col :span="12"><a-form-item label="转速 (rpm)"><a-input-number v-model:value="conditions.speed" style="width: 100%" /></a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="温度 (°C)"><a-input-number v-model:value="conditions.temp" style="width: 100%" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="转速 (rpm)" :validate-status="inputErrors.speed ? 'error' : ''"><a-input-number v-model:value="conditions.speed" :status="inputErrors.speed ? 'error' : ''" style="width: 100%" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="温度 (°C)" :validate-status="inputErrors.temp ? 'error' : ''"><a-input-number v-model:value="conditions.temp" :status="inputErrors.temp ? 'error' : ''" style="width: 100%" /></a-form-item></a-col>
               </a-row>
             </a-form>
           </a-card>
         </a-col>
 
         <a-col :span="14">
+          <!-- Section 11.3: Live validation alert banner -->
+          <a-alert v-if="!isValid" type="error" show-icon style="margin-bottom: 12px">
+            <template #message>输入参数有误</template>
+            <template #description>
+              <ul style="margin: 4px 0 0 16px; padding: 0">
+                <li v-for="(msg, key) in inputErrors" :key="key" v-if="msg">{{ msg }}</li>
+              </ul>
+            </template>
+          </a-alert>
+
           <a-card title="轴承参数与寿命计算" size="small" v-if="selectedBearing && results">
             <a-descriptions bordered size="small" :column="2" title="轴承规格参数">
               <a-descriptions-item label="型号">{{ selectedBearing.designation }}</a-descriptions-item>

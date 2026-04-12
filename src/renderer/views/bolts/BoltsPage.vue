@@ -43,6 +43,16 @@ const stressResult = computed(() => {
   return calcStress(selectedBolt.value, conditions.value.axialForce, conditions.value.shearForce)
 })
 
+// Section 11.3: Live input validation
+const inputErrors = computed(() => ({
+  axialForce: conditions.value.axialForce < 0 ? '轴向载荷不能为负' : '',
+  shearForce: conditions.value.shearForce < 0 ? '剪切载荷不能为负' : '',
+  torque: conditions.value.torque <= 0 ? '预紧扭矩必须大于 0' : '',
+  torqueCoeff: conditions.value.torqueCoeff < 0.1 ? '扭矩系数过低' : conditions.value.torqueCoeff > 0.3 ? '扭矩系数过高，请确认润滑状态' : '',
+}))
+
+const isValid = computed(() => Object.values(inputErrors.value).every(e => !e))
+
 const recommendedTorque = computed(() => {
   return recommendTorque(selectedDesignation.value, propertyClass.value)
 })
@@ -168,12 +178,12 @@ function printReport() {
               <a-row :gutter="12">
                 <a-col :span="12">
                   <a-form-item label="轴向载荷 (kN)">
-                    <a-input-number v-model:value="conditions.axialForce" style="width: 100%" :min="0" />
+                    <a-input-number v-model:value="conditions.axialForce" :status="inputErrors.axialForce ? 'error' : ''" style="width: 100%" :min="0" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="12">
                   <a-form-item label="剪切载荷 (kN)">
-                    <a-input-number v-model:value="conditions.shearForce" style="width: 100%" :min="0" />
+                    <a-input-number v-model:value="conditions.shearForce" :status="inputErrors.shearForce ? 'error' : ''" style="width: 100%" :min="0" />
                   </a-form-item>
                 </a-col>
               </a-row>
@@ -182,12 +192,12 @@ function printReport() {
               <a-row :gutter="12">
                 <a-col :span="12">
                   <a-form-item label="预紧扭矩 (N·m)">
-                    <a-input-number v-model:value="conditions.torque" style="width: 100%" :min="0" />
+                    <a-input-number v-model:value="conditions.torque" :status="inputErrors.torque ? 'error' : ''" style="width: 100%" :min="0" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="12">
                   <a-form-item label="扭矩系数 K">
-                    <a-input-number v-model:value="conditions.torqueCoeff" style="width: 100%" :min="0.1" :max="0.3" :step="0.01" />
+                    <a-input-number v-model:value="conditions.torqueCoeff" :status="inputErrors.torqueCoeff ? 'error' : ''" style="width: 100%" :min="0.1" :max="0.3" :step="0.01" />
                     <div class="hint">干摩擦≈0.2, 润滑≈0.1~0.15</div>
                   </a-form-item>
                 </a-col>
@@ -197,6 +207,16 @@ function printReport() {
         </a-col>
 
         <a-col :span="14">
+          <!-- Section 11.3: Live validation alert -->
+          <a-alert v-if="!isValid" type="error" show-icon style="margin-bottom: 12px">
+            <template #message>输入参数有误</template>
+            <template #description>
+              <ul style="margin: 4px 0 0 16px; padding: 0">
+                <li v-for="(msg, key) in inputErrors" :key="key" v-if="msg">{{ msg }}</li>
+              </ul>
+            </template>
+          </a-alert>
+
           <a-card title="螺栓参数与强度校核" size="small" v-if="selectedBolt && stressResult">
             <a-descriptions bordered size="small" :column="2" title="螺栓规格参数">
               <a-descriptions-item label="规格">{{ selectedBolt.designation }}</a-descriptions-item>

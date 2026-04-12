@@ -256,6 +256,31 @@ onUnmounted(() => {
     overflow-x: hidden;
 }
 
+/* 增大侧边栏字号 - Section 4.3.3 UX 优化 */
+.menu-scroll :deep(.ant-menu-item) {
+    font-size: 15px !important;
+    height: 42px !important;
+    line-height: 42px !important;
+}
+
+.menu-scroll :deep(.ant-menu-submenu-title) {
+    font-size: 16px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+    font-weight: bold !important;
+}
+
+.menu-scroll :deep(.ant-menu-sub .ant-menu-item) {
+    font-size: 14px !important;
+    height: 38px !important;
+    line-height: 38px !important;
+    font-weight: normal !important;
+}
+
+.menu-scroll :deep(.ant-menu-item .anticon) {
+    font-size: 18px !important;
+}
+
 .menu-scroll::-webkit-scrollbar {
     width: 4px;
 }

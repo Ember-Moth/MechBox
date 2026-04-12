@@ -31,6 +31,8 @@ const materials: Material[] = [
     category: 'structural_steel',
     designation: 'Q235B',
     name_zh: '碳素结构钢 Q235B',
+    standard_ref: 'GB/T 700-2006',
+    condition: '热轧态',
     density: 7.85,
     E: 206000,
     G: 79000,
@@ -47,6 +49,8 @@ const materials: Material[] = [
     category: 'structural_steel',
     designation: '45#',
     name_zh: '优质碳素结构钢 45#',
+    standard_ref: 'GB/T 699-2015',
+    condition: '调质态',
     density: 7.85,
     E: 206000,
     G: 79000,
@@ -56,13 +60,15 @@ const materials: Material[] = [
     temp_min: -20,
     temp_max: 450,
     applications: ['轴类', '齿轮', '高强度结构件', '连杆'],
-    notes: '调质处理后综合力学性能好'
+    notes: '调质处理后综合力学性能好，注意正火态屈服强度约 280MPa'
   },
   {
     id: '40cr',
     category: 'structural_steel',
     designation: '40Cr',
     name_zh: '合金结构钢 40Cr',
+    standard_ref: 'GB/T 3077-2015',
+    condition: '调质态',
     density: 7.85,
     E: 206000,
     G: 79000,
@@ -80,6 +86,8 @@ const materials: Material[] = [
     category: 'stainless_steel',
     designation: '06Cr19Ni10 (304)',
     name_zh: '奥氏体不锈钢 304',
+    standard_ref: 'GB/T 20878-2007',
+    condition: '固溶态',
     density: 7.93,
     E: 193000,
     G: 73000,
@@ -96,6 +104,8 @@ const materials: Material[] = [
     category: 'stainless_steel',
     designation: '022Cr17Ni12Mo2 (316L)',
     name_zh: '奥氏体不锈钢 316L',
+    standard_ref: 'GB/T 20878-2007',
+    condition: '固溶态',
     density: 7.98,
     E: 193000,
     G: 73000,
@@ -113,6 +123,8 @@ const materials: Material[] = [
     category: 'aluminum',
     designation: '6061-T6',
     name_zh: '铝合金 6061-T6',
+    standard_ref: 'GB/T 3190-2008',
+    condition: 'T6 固溶+人工时效',
     density: 2.70,
     E: 68900,
     G: 26000,
@@ -130,6 +142,8 @@ const materials: Material[] = [
     category: 'copper',
     designation: 'H62',
     name_zh: '黄铜 H62',
+    standard_ref: 'GB/T 5231-2012',
+    condition: 'H 硬态',
     density: 8.50,
     E: 100000,
     G: 40000,
@@ -147,6 +161,8 @@ const materials: Material[] = [
     category: 'cast_iron',
     designation: 'HT250',
     name_zh: '灰铸铁 HT250',
+    standard_ref: 'GB/T 9439-2010',
+    condition: '铸态',
     density: 7.20,
     E: 110000,
     G: 44000,
@@ -227,10 +243,11 @@ function selectMaterial(mat: Material) {
           <a-card :title="`材料列表 (${filteredMaterials.length}种)`" size="small" style="margin-top: 16px">
             <a-table
               :columns="[
-                { title: '牌号', dataIndex: 'designation', key: 'designation', width: '25%' },
-                { title: '名称', dataIndex: 'name_zh', key: 'name_zh', width: '35%' },
-                { title: '类别', dataIndex: 'category', key: 'category', width: '20%' },
-                { title: '屈服强度', dataIndex: 'yield_strength', key: 'yield_strength', width: '20%' }
+                { title: '牌号', dataIndex: 'designation', key: 'designation', width: '22%' },
+                { title: '名称', dataIndex: 'name_zh', key: 'name_zh', width: '28%' },
+                { title: '标准号', dataIndex: 'standard_ref', key: 'standard_ref', width: '20%' },
+                { title: '类别', dataIndex: 'category', key: 'category', width: '15%' },
+                { title: '屈服强度', dataIndex: 'yield_strength', key: 'yield_strength', width: '15%' }
               ]"
               :data-source="filteredMaterials"
               :pagination="false"
@@ -255,6 +272,12 @@ function selectMaterial(mat: Material) {
             <a-descriptions bordered size="small" :column="1">
               <a-descriptions-item label="牌号">{{ selectedMaterial.designation }}</a-descriptions-item>
               <a-descriptions-item label="名称">{{ selectedMaterial.name_zh }}</a-descriptions-item>
+              <a-descriptions-item label="标准号">
+                <a-tag color="blue" v-if="selectedMaterial.standard_ref">{{ selectedMaterial.standard_ref }}</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="热处理状态">
+                <a-tag color="green" v-if="selectedMaterial.condition">{{ selectedMaterial.condition }}</a-tag>
+              </a-descriptions-item>
               <a-descriptions-item label="密度">{{ selectedMaterial.density }} g/cm³</a-descriptions-item>
               <a-descriptions-item label="弹性模量 E">{{ selectedMaterial.E }} MPa</a-descriptions-item>
               <a-descriptions-item label="剪切模量 G">{{ selectedMaterial.G }} MPa</a-descriptions-item>
