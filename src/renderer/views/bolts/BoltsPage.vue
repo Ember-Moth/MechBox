@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { calcPreload, calcStress, recommendTorque } from '../../engine/bolts/strength'
-import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined } from '@ant-design/icons-vue'
+import { exportBoltAssemblyToSTEP } from '../../engine/cad-export'
+import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 
 const boltList = ref<any[]>([])
 const selectedDesignation = ref('M10')
@@ -50,6 +51,25 @@ function exportPDF() {
   // TODO: Implement PDF export
   alert('PDF导出功能正在开发中')
 }
+
+function exportCAD() {
+  if (!selectedBolt.value) return
+  
+  const cadScript = exportBoltAssemblyToSTEP(
+    selectedBolt.value,
+    20,  // 假设板厚20mm
+    2
+  )
+  
+  // 创建下载
+  const blob = new Blob([cadScript], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `bolt_assembly_${selectedBolt.value.designation}.txt`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -59,6 +79,9 @@ function exportPDF() {
       <a-space>
         <a-button size="small" type="primary" @click="exportPDF">
           <template #icon><FilePdfOutlined /></template>创建PDF
+        </a-button>
+        <a-button size="small" @click="exportCAD">
+          <template #icon><DownloadOutlined /></template>导出CAD
         </a-button>
         <a-button size="small">
           <template #icon><PrinterOutlined /></template>打印报告
