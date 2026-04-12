@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("db-query-oring-list", standard),
     queryOringSpec: (standard: string, code: string) =>
       ipcRenderer.invoke("db-query-oring-spec", standard, code),
+    queryBearings: () => ipcRenderer.invoke("db-query-bearings"),
   },
 });

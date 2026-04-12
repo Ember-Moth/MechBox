@@ -63,6 +63,10 @@ function registerIpcHandlers() {
       .prepare("SELECT * FROM oring_standards WHERE standard = ? AND code = ?")
       .get(standard, code);
   });
+
+  ipcMain.handle("db-query-bearings", (_) => {
+    return getDatabase().prepare("SELECT * FROM bearings_deep_groove").all();
+  });
 }
 
 app.whenReady().then(() => {

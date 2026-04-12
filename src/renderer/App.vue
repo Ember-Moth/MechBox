@@ -9,6 +9,7 @@ import {
 } from "@ant-design/icons-vue";
 import TolerancesPage from "./views/tolerances/TolerancesPage.vue";
 import SealsPage from "./views/seals/SealsPage.vue";
+import BearingsPage from "./views/bearings/BearingsPage.vue";
 
 const collapsed = ref(false);
 const selectedKeys = ref(["tolerances"]);
@@ -17,8 +18,8 @@ const menuItems = [
     { key: "dashboard", icon: DashboardOutlined, label: "工作台" },
     { key: "tolerances", icon: ColumnWidthOutlined, label: "公差配合" },
     { key: "seals", icon: BlockOutlined, label: "密封圈" },
+    { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
     { key: "favorites", icon: StarOutlined, label: "我的收藏" },
-    { key: "settings", icon: SettingOutlined, label: "系统设置" },
 ];
 </script>
 
@@ -74,6 +75,9 @@ const menuItems = [
                     </div>
                     <div v-else-if="selectedKeys[0] === 'seals'">
                         <SealsPage />
+                    </div>
+                    <div v-else-if="selectedKeys[0] === 'bearings'">
+                        <BearingsPage />
                     </div>
                     <div v-else>正在构建 {{ selectedKeys[0] }} 模块...</div>
                 </div>

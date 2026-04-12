@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useStandardStore } from "../../store/useStandardStore";
 import { calcCompression, calcStretch } from "../../engine/seals/oring";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import {
     InfoCircleOutlined,
     FilePdfOutlined,
@@ -48,6 +50,22 @@ const deviations = ref({
 const holePositions = ["H"];
 const shaftPositions = ["h", "g", "f"];
 const itGrades = ["IT5", "IT6", "IT7", "IT8", "IT9"];
+
+// 导出 PDF 逻辑
+const exportPDF = async () => {
+    const element = document.querySelector(".tss-style-page") as HTMLElement;
+    if (!element) return;
+
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("MechBox-O-Ring-Report.pdf");
+};
 
 // 监听尺寸或公差代号变化，更新数据库偏差
 const updateDeviations = async (key: "d4" | "d9" | "d3") => {
@@ -118,6 +136,32 @@ const results = computed(() => {
     return { compression: comp, stretch: str, clearance, fillRate };
 });
 
+// 偏心/极限工况计算
+const limits = computed(() => {
+    const cs = form.value.d2;
+    const csTol = 0.08; // 简化的标准公差 +/- 0.08
+    const minCS = cs - csTol;
+    const maxCS = cs + csTol;
+
+    const minD4 = form.value.d4 + deviations.value.d4.ei;
+    const maxD4 = form.value.d4 + deviations.value.d4.es;
+
+    const minD3 = form.value.d3 + deviations.value.d3.ei;
+    const maxD3 = form.value.d3 + deviations.value.d3.es;
+
+    const minD9 = form.value.d9 + deviations.value.d9.ei;
+    const maxD9 = form.value.d9 + deviations.value.d9.es;
+
+    const minDepth = (minD4 - maxD3) / 2;
+    const maxDepth = (maxD4 - minD3) / 2;
+
+    const minComp = calcCompression(minCS, maxDepth);
+    const maxComp = calcCompression(maxCS, minDepth);
+    const maxClearance = (maxD4 - minD9) / 2;
+
+    return { minComp, maxComp, maxClearance };
+});
+
 // SVG 动态预览计算
 const svgScale = computed(() => {
     const maxDim = Math.max(form.value.d4, 30);
@@ -131,7 +175,7 @@ const svgScale = computed(() => {
         <div class="toolbar">
             <div class="brand">MechBox <small>Powered by SQLite</small></div>
             <a-space>
-                <a-button size="small" type="primary"
+                <a-button size="small" type="primary" @click="exportPDF"
                     ><template #icon><FilePdfOutlined /></template
                     >创建PDF</a-button
                 >
@@ -585,15 +629,42 @@ const svgScale = computed(() => {
                                         <div class="res-label">
                                             最小压缩率 (极限)
                                         </div>
-                                        <div class="res-value">--</div>
+                                        <div
+                                            class="res-value"
+                                            :class="{
+                                                error: limits.minComp.warnings
+                                                    .length,
+                                            }"
+                                        >
+                                            {{
+                                                limits.minComp.value.toFixed(1)
+                                            }}
+                                            %
+                                        </div>
                                         <div class="res-label">
                                             最大压缩率 (极限)
                                         </div>
-                                        <div class="res-value">--</div>
+                                        <div
+                                            class="res-value"
+                                            :class="{
+                                                error: limits.maxComp.warnings
+                                                    .length,
+                                            }"
+                                        >
+                                            {{
+                                                limits.maxComp.value.toFixed(1)
+                                            }}
+                                            %
+                                        </div>
                                         <div class="res-label">
                                             最大间隙 (含跳动)
                                         </div>
-                                        <div class="res-value">--</div>
+                                        <div class="res-value">
+                                            {{
+                                                limits.maxClearance.toFixed(3)
+                                            }}
+                                            mm
+                                        </div>
                                         <div class="res-label">推荐材料</div>
                                         <div class="res-value">NBR 70</div>
                                     </div>

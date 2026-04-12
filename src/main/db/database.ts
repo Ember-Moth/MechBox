@@ -1,31 +1,35 @@
-import Database from 'better-sqlite3'
-import { app } from 'electron'
-import { join } from 'path'
-import { existsSync, mkdirSync } from 'fs'
-import iso286Data from '../../../data/standards/tolerances/iso286.json'
-import as568Data from '../../../data/standards/o-ring/as568.json'
+import Database from "better-sqlite3";
+import { app } from "electron";
+import { join } from "path";
+import { existsSync, mkdirSync } from "fs";
+import iso286Data from "../../../data/standards/tolerances/iso286.json";
+import as568Data from "../../../data/standards/o-ring/as568.json";
+import deepGrooveData from "../../../data/standards/bearings/deep-groove.json";
 
-let db: Database.Database
+let db: Database.Database;
 
 export function initDatabase() {
-  const userDataPath = app.getPath('userData')
-  const dbPath = join(userDataPath, 'mechbox.db')
+  const userDataPath = app.getPath("userData");
+  const dbPath = join(userDataPath, "mechbox.db");
 
-  db = new Database(dbPath)
-  db.pragma('journal_mode = WAL')
+  db = new Database(dbPath);
+  db.pragma("journal_mode = WAL");
 
   // 创建公差 IT 等级表
-  db.prepare(`
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS tolerance_it_grades (
       grade TEXT,
       size_index INTEGER,
       value INTEGER,
       PRIMARY KEY (grade, size_index)
     )
-  `).run()
+  `,
+  ).run();
 
   // 创建基本偏差表
-  db.prepare(`
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS fundamental_deviations (
       type TEXT, -- 'holes' or 'shafts'
       position TEXT,
@@ -33,10 +37,12 @@ export function initDatabase() {
       value INTEGER,
       PRIMARY KEY (type, position, size_index)
     )
-  `).run()
+  `,
+  ).run();
 
   // 创建 O型圈标准表
-  db.prepare(`
+  db.prepare(
+    `
     CREATE TABLE IF NOT EXISTS oring_standards (
       standard TEXT,
       code TEXT,
@@ -44,46 +50,107 @@ export function initDatabase() {
       cs REAL,
       PRIMARY KEY (standard, code)
     )
-  `).run()
+  `,
+  ).run();
+
+  // 创建深沟球轴承表
+  db.prepare(
+    `
+    CREATE TABLE IF NOT EXISTS bearings_deep_groove (
+      designation TEXT PRIMARY KEY,
+      d REAL,
+      D REAL,
+      B REAL,
+      C_r REAL,
+      C_0r REAL,
+      speed_limit_grease REAL,
+      speed_limit_oil REAL,
+      mass REAL
+    )
+  `,
+  ).run();
 
   // 导入初始数据 (仅当表为空时)
-  const itCount = db.prepare('SELECT count(*) as count FROM tolerance_it_grades').get() as { count: number }
+  const itCount = db
+    .prepare("SELECT count(*) as count FROM tolerance_it_grades")
+    .get() as { count: number };
   if (itCount.count === 0) {
-    const insertIT = db.prepare('INSERT INTO tolerance_it_grades (grade, size_index, value) VALUES (?, ?, ?)')
+    const insertIT = db.prepare(
+      "INSERT INTO tolerance_it_grades (grade, size_index, value) VALUES (?, ?, ?)",
+    );
     const transaction = db.transaction((data) => {
       for (const [grade, values] of Object.entries(data)) {
-        (values as number[]).forEach((val, idx) => insertIT.run(grade, idx, val))
+        (values as number[]).forEach((val, idx) =>
+          insertIT.run(grade, idx, val),
+        );
       }
-    })
-    transaction(iso286Data.it_grades)
+    });
+    transaction(iso286Data.it_grades);
   }
 
-  const devCount = db.prepare('SELECT count(*) as count FROM fundamental_deviations').get() as { count: number }
+  const devCount = db
+    .prepare("SELECT count(*) as count FROM fundamental_deviations")
+    .get() as { count: number };
   if (devCount.count === 0) {
-    const insertDev = db.prepare('INSERT INTO fundamental_deviations (type, position, size_index, value) VALUES (?, ?, ?, ?)')
+    const insertDev = db.prepare(
+      "INSERT INTO fundamental_deviations (type, position, size_index, value) VALUES (?, ?, ?, ?)",
+    );
     const transaction = db.transaction((data) => {
       for (const [type, positions] of Object.entries(data)) {
         for (const [pos, values] of Object.entries(positions as any)) {
-          (values as number[]).forEach((val, idx) => insertDev.run(type, pos, idx, val))
+          (values as number[]).forEach((val, idx) =>
+            insertDev.run(type, pos, idx, val),
+          );
         }
       }
-    })
-    transaction(iso286Data.fundamental_deviations)
+    });
+    transaction(iso286Data.fundamental_deviations);
   }
 
-  const oringCount = db.prepare('SELECT count(*) as count FROM oring_standards').get() as { count: number }
+  const oringCount = db
+    .prepare("SELECT count(*) as count FROM oring_standards")
+    .get() as { count: number };
   if (oringCount.count === 0) {
-    const insertOring = db.prepare('INSERT INTO oring_standards (standard, code, id, cs) VALUES (?, ?, ?, ?)')
+    const insertOring = db.prepare(
+      "INSERT INTO oring_standards (standard, code, id, cs) VALUES (?, ?, ?, ?)",
+    );
     const transaction = db.transaction((data) => {
-      data.sizes.forEach((s: any) => insertOring.run(data.standard, s.code, s.id, s.cs))
-    })
-    transaction(as568Data)
+      data.sizes.forEach((s: any) =>
+        insertOring.run(data.standard, s.code, s.id, s.cs),
+      );
+    });
+    transaction(as568Data);
   }
 
-  console.log('Database initialized at:', dbPath)
-  return db
+  const bearingsCount = db
+    .prepare("SELECT count(*) as count FROM bearings_deep_groove")
+    .get() as { count: number };
+  if (bearingsCount.count === 0) {
+    const insertBearing = db.prepare(
+      "INSERT INTO bearings_deep_groove (designation, d, D, B, C_r, C_0r, speed_limit_grease, speed_limit_oil, mass) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    );
+    const transaction = db.transaction((data) => {
+      data.bearings.forEach((b: any) =>
+        insertBearing.run(
+          b.designation,
+          b.d,
+          b.D,
+          b.B,
+          b.C_r,
+          b.C_0r,
+          b.speed_limit_grease,
+          b.speed_limit_oil,
+          b.mass,
+        ),
+      );
+    });
+    transaction(deepGrooveData);
+  }
+
+  console.log("Database initialized at:", dbPath);
+  return db;
 }
 
 export function getDatabase() {
-  return db
+  return db;
 }

@@ -6,6 +6,7 @@ export const useStandardStore = defineStore("standard", {
     iso286Static: iso286Data,
     unit: "mm" as "mm" | "inch",
     oringList: [] as any[],
+    bearingList: [] as any[],
   }),
   actions: {
     setUnit(unit: "mm" | "inch") {
@@ -34,6 +35,9 @@ export const useStandardStore = defineStore("standard", {
     },
     async fetchOringList(standard: string) {
       this.oringList = await window.electron.db.queryOringList(standard);
+    },
+    async fetchBearings() {
+      this.bearingList = await window.electron.db.queryBearings();
     },
   },
 });
