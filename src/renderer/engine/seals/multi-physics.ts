@@ -102,6 +102,13 @@ export const calcSealMultiPhysics = (params: SealMultiPhysicsParams): CalcResult
     warnings.push({ level: 'error', message: `槽满率 ${fillRate.toFixed(1)}% > 100%，高温下会胀出沟槽` })
   }
 
+  // Section 11.4: Manufacturing constraint checks
+  // 沟槽深径比过大时的刀具干涉风险
+  const depthToWidthRatio = params.grooveDepth / params.grooveWidth
+  if (depthToWidthRatio > 0.5) {
+    warnings.push({ level: 'warning', message: `沟槽深径比 ${depthToWidthRatio.toFixed(2)} 过大`, suggestion: '需注意非标加长刀具的加工振动风险' })
+  }
+
   return {
     value: {
       compressionRatio: baseCompression,

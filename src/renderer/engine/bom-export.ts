@@ -16,6 +16,8 @@ export interface BOMItem {
   supplierPartNo?: string   // 供应商订货号
   unitCost?: number         // 单价 (元)
   totalCost: number         // 总价
+  /** Section 11.4: ERP/BOM 企业物料编码 (Section 11.4) */
+  enterpriseCode?: string   // 企业内部物料编码 (如: ERP-001234)
 }
 
 export interface BOMReport {
