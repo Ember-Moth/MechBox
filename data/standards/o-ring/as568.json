@@ -1,0 +1,12 @@
+{
+  "standard": "AS568",
+  "description": "Aerospace Size Standard for O-Rings",
+  "sizes": [
+    { "code": "001", "id": 0.74, "cs": 1.02 },
+    { "code": "002", "id": 1.07, "cs": 1.27 },
+    { "code": "003", "id": 1.42, "cs": 1.52 },
+    { "code": "010", "id": 6.07, "cs": 1.78 },
+    { "code": "110", "id": 9.19, "cs": 2.62 },
+    { "code": "210", "id": 18.64, "cs": 3.53 }
+  ]
+}
