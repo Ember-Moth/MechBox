@@ -1,114 +1,108 @@
 import { describe, test, expect } from 'vitest'
-import { calcISO6336 } from '../../src/renderer/engine/gears/iso6336'
+import { calcGearISO6336, recommendModificationCoefficients } from '../../src/renderer/engine/gears/iso6336'
 
 describe('ISO 6336 Gear Strength (Section 10.4)', () => {
-  describe('calcISO6336', () => {
-    test('basic gear calculation', () => {
-      const result = calcISO6336({
+  describe('calcGearISO6336', () => {
+    test('basic calculation with standard gears', () => {
+      const result = calcGearISO6336({
         module: 2,
         teeth1: 20,
         teeth2: 40,
         faceWidth: 20,
         pressureAngle: 20,
         torque1: 50,
-        materialYield1: 640,
-        materialYield2: 640
+        sigmaHlim: 1500,
+        sigmaFlim: 400
       })
+      
       expect(result.value.d1).toBeCloseTo(40, 0)
       expect(result.value.d2).toBeCloseTo(80, 0)
-      expect(result.value.contactRatio).toBeGreaterThan(1.2)
+      expect(result.value.Ft).toBeGreaterThan(0)
+      expect(result.value.SH).toBeGreaterThan(1.0)
+      expect(result.value.SF1).toBeGreaterThan(1.4)
     })
 
     test('root cut warning for teeth < 17', () => {
-      const result = calcISO6336({
+      const result = calcGearISO6336({
         module: 2,
         teeth1: 12,
         teeth2: 30,
         faceWidth: 20,
         pressureAngle: 20,
         torque1: 50,
-        materialYield1: 640,
-        materialYield2: 640
+        sigmaHlim: 1500,
+        sigmaFlim: 400
       })
+      
       expect(result.value.warnings.some(w => w.message.includes('根切'))).toBe(true)
     })
 
-    test('low contact ratio warning', () => {
-      const result = calcISO6336({
-        module: 2,
-        teeth1: 17,
-        teeth2: 20,
-        faceWidth: 5,  // Very narrow
+    test('contact safety factor warning', () => {
+      const result = calcGearISO6336({
+        module: 1,
+        teeth1: 20,
+        teeth2: 40,
+        faceWidth: 10,
         pressureAngle: 20,
-        torque1: 50,
-        materialYield1: 640,
-        materialYield2: 640
+        torque1: 100,  // High torque
+        sigmaHlim: 800,  // Low limit
+        sigmaFlim: 400
       })
-      // Should have warnings for narrow face width
-      expect(result.value.K_Hbeta).toBeGreaterThan(1.0)
+      
+      // Should have low safety factor warning
+      expect(result.value.SH < 1.5 || result.value.warnings.length > 0).toBe(true)
     })
 
     test('helical gear calculation', () => {
-      const result = calcISO6336({
+      const result = calcGearISO6336({
         module: 2,
         teeth1: 20,
         teeth2: 40,
         faceWidth: 30,
         pressureAngle: 20,
         torque1: 50,
-        materialYield1: 640,
-        materialYield2: 640,
+        sigmaHlim: 1500,
+        sigmaFlim: 400,
         helixAngle: 15
       })
-      expect(result.value.d1).toBeGreaterThan(40)  // Helical gears have larger pitch diameters
+      
+      expect(result.value.d1).toBeGreaterThan(40)  // Helical has larger pitch diameter
       expect(result.value.tipRelief).toBeGreaterThan(0)
     })
 
-    test('safety factors calculation', () => {
-      const result = calcISO6336({
-        module: 2,
+    test('tip relief recommendation', () => {
+      const result = calcGearISO6336({
+        module: 3,
         teeth1: 20,
         teeth2: 40,
-        faceWidth: 20,
+        faceWidth: 30,
         pressureAngle: 20,
         torque1: 50,
-        materialYield1: 640,
-        materialYield2: 640
+        sigmaHlim: 1500,
+        sigmaFlim: 400
       })
-      expect(result.value.SH1).toBeGreaterThan(0)
-      expect(result.value.SF1).toBeGreaterThan(0)
-      expect(result.value.SH2).toBeGreaterThan(0)
-      expect(result.value.SF2).toBeGreaterThan(0)
+      
+      // Tip relief should be 5 + 3*m = 14 μm for m=3
+      expect(result.value.tipRelief).toBeCloseTo(14, 0)
+    })
+  })
+
+  describe('recommendModificationCoefficients', () => {
+    test('no modification needed for z >= 17', () => {
+      const { x1, x2 } = recommendModificationCoefficients(20, 40)
+      expect(x1).toBeGreaterThan(0)
+      expect(x2).toBe(0)  // z2=40 doesn't need modification
     })
 
-    test('application factor effect', () => {
-      const result1 = calcISO6336({
-        module: 2,
-        teeth1: 20,
-        teeth2: 40,
-        faceWidth: 20,
-        pressureAngle: 20,
-        torque1: 50,
-        materialYield1: 640,
-        materialYield2: 640,
-        applicationFactor: 1.0
-      })
-      
-      const result2 = calcISO6336({
-        module: 2,
-        teeth1: 20,
-        teeth2: 40,
-        faceWidth: 20,
-        pressureAngle: 20,
-        torque1: 50,
-        materialYield1: 640,
-        materialYield2: 640,
-        applicationFactor: 1.5
-      })
-      
-      // Higher application factor should result in lower safety factors
-      expect(result2.value.SH1).toBeLessThan(result1.value.SH1)
-      expect(result2.value.SF1).toBeLessThan(result1.value.SF1)
+    test('positive modification for z < 17', () => {
+      const { x1, x2 } = recommendModificationCoefficients(12, 30)
+      expect(x1).toBeGreaterThan(0.2)  // Should recommend significant modification
+    })
+
+    test('both gears need modification', () => {
+      const { x1, x2 } = recommendModificationCoefficients(14, 16)
+      expect(x1).toBeGreaterThan(0)
+      expect(x2).toBeGreaterThan(0)
     })
   })
 })

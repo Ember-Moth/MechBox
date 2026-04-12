@@ -2,8 +2,8 @@ import json
 import os
 import re
 import sqlite3
+import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
 
@@ -17,7 +17,6 @@ KHK_URLS = [
     "https://www.khkgears.us/catalog/product/SSG1-20",
     "https://www.khkgears.us/catalog/product/SS2-30",
     "https://www.khkgears.us/catalog/product/SR1-500",
-    "https://www.khkgears.us/catalog/product/KS2-30/",
     "https://www.khkgears.us/catalog/product/MM2-30",
     "https://www.khkgears.us/catalog/product/SMSG1-25R",
 ]
@@ -49,18 +48,26 @@ def slugify(value: str) -> str:
 
 
 def fetch_text(url: str) -> str:
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (X11; Linux x86_64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0 Safari/537.36"
-            )
-        },
+    result = subprocess.run(
+        [
+            "curl",
+            "-L",
+            "--silent",
+            "--show-error",
+            "--retry",
+            "3",
+            "--retry-all-errors",
+            "--retry-delay",
+            "2",
+            "--max-time",
+            "30",
+            url,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
-    with urllib.request.urlopen(req, timeout=30) as response:
-        return response.read().decode("utf-8", errors="replace")
+    return result.stdout
 
 
 def parse_khk_page(html: str, url: str):
