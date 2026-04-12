@@ -488,6 +488,14 @@ def import_nsk_catalog_bearings(conn: sqlite3.Connection):
         """,
         variant_rows,
     )
+    conn.execute(
+        """
+        UPDATE dataset_release
+        SET row_count = ?
+        WHERE dataset_id = 'dataset_nsk_deep_groove_pdf'
+        """,
+        (len(rows),),
+    )
 
 
 def import_orings(conn: sqlite3.Connection):
