@@ -12,27 +12,28 @@
     "lint": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@ant-design/icons-vue": "*",
+    "ant-design-vue": "*",
+    "better-sqlite3": "*",
+    "echarts": "*",
+    "html2canvas": "*",
+    "jspdf": "*",
+    "pinia": "*",
     "vue": "*",
     "vue-router": "*",
-    "pinia": "*",
-    "ant-design-vue": "*",
-    "@ant-design/icons-vue": "*",
-    "echarts": "*",
-    "better-sqlite3": "*",
-    "jspdf": "*",
-    "html2canvas": "*",
     "xlsx": "*"
   },
   "devDependencies": {
-    "electron": "*",
-    "vite": "*",
-    "electron-vite": "*",
-    "@vitejs/plugin-vue": "*",
-    "vitest": "*",
-    "typescript": "*",
-    "vue-tsc": "*",
-    "@types/node": "*",
+    "@electron-toolkit/utils": "*",
+    "@electron/rebuild": "^4.0.3",
     "@types/better-sqlite3": "*",
-    "@electron-toolkit/utils": "*"
+    "@types/node": "*",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "electron": "*",
+    "electron-vite": "5.0.0",
+    "typescript": "*",
+    "vite": "^6.2.1",
+    "vitest": "*",
+    "vue-tsc": "*"
   }
 }

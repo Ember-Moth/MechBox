@@ -70,7 +70,7 @@ function registerIpcHandlers() {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppId("com.mechbox.app");
+  electronApp.setAppUserModelId("com.mechbox.app");
 
   // 初始化数据库
   db = initDatabase();

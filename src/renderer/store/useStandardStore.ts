@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import iso286Data from "../../../../data/standards/tolerances/iso286.json";
+import iso286Data from "../../../data/standards/tolerances/iso286.json";
 
 export const useStandardStore = defineStore("standard", {
   state: () => ({
@@ -13,7 +13,7 @@ export const useStandardStore = defineStore("standard", {
       this.unit = unit;
     },
     getSizeRangeIndex(size: number): number {
-      return this.iso286Static.size_ranges.findIndex((range) => {
+      return this.iso286Static.size_ranges.findIndex((range: number[]) => {
         return size > range[0] && size <= range[1];
       });
     },

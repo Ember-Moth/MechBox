@@ -5,37 +5,16 @@ import { resolve } from "path";
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
-    build: {
-      rollupOptions: {
-        input: {
-          index: resolve(__dirname, "src/main/index.ts"),
-        },
-      },
-    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
-    build: {
-      rollupOptions: {
-        input: {
-          index: resolve(__dirname, "src/preload/index.ts"),
-        },
-      },
-    },
   },
   renderer: {
+    plugins: [vue()],
     resolve: {
       alias: {
-        "@renderer": resolve(__dirname, "src/renderer"),
-        "@shared": resolve(__dirname, "src/shared"),
-      },
-    },
-    plugins: [vue()],
-    build: {
-      rollupOptions: {
-        input: {
-          index: resolve(__dirname, "src/renderer/index.html"),
-        },
+        "@renderer": resolve("src/renderer"),
+        "@shared": resolve("src/shared"),
       },
     },
   },

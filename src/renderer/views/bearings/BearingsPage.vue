@@ -55,7 +55,7 @@ const results = computed(() => {
               <a-form-item label="选择深沟球轴承型号">
                 <a-select v-model:value="selectedDesignation" show-search style="width: 100%">
                   <a-select-option v-for="b in store.bearingList" :key="b.designation" :value="b.designation">
-                    {{ b.designation }} (d={{ b.d }}mm, D={{ b.D }}mm)
+                    {{ b.designation }} (d={{ b.inner_diameter }}mm, D={{ b.outer_diameter }}mm)
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -82,9 +82,9 @@ const results = computed(() => {
             <a-descriptions bordered size="small" :column="2" title="轴承规格参数">
               <a-descriptions-item label="型号">{{ selectedBearing.designation }}</a-descriptions-item>
               <a-descriptions-item label="类型">深沟球轴承</a-descriptions-item>
-              <a-descriptions-item label="内径 d">{{ selectedBearing.d }} mm</a-descriptions-item>
-              <a-descriptions-item label="外径 D">{{ selectedBearing.D }} mm</a-descriptions-item>
-              <a-descriptions-item label="宽度 B">{{ selectedBearing.B }} mm</a-descriptions-item>
+              <a-descriptions-item label="内径 d">{{ selectedBearing.inner_diameter }} mm</a-descriptions-item>
+              <a-descriptions-item label="外径 D">{{ selectedBearing.outer_diameter }} mm</a-descriptions-item>
+              <a-descriptions-item label="宽度 B">{{ selectedBearing.width }} mm</a-descriptions-item>
               <a-descriptions-item label="质量">{{ selectedBearing.mass }} kg</a-descriptions-item>
               <a-descriptions-item label="额定动载荷 Cr">{{ selectedBearing.C_r }} kN</a-descriptions-item>
               <a-descriptions-item label="额定静载荷 C0r">{{ selectedBearing.C_0r }} kN</a-descriptions-item>
