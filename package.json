@@ -21,7 +21,8 @@
     "pinia": "*",
     "vue": "*",
     "vue-router": "*",
-    "xlsx": "*"
+    "xlsx": "*",
+    "ajv": "*"
   },
   "devDependencies": {
     "@electron-toolkit/utils": "*",

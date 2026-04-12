@@ -25,5 +25,16 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("db-user-standard-delete", id),
     getUserStandard: (id: string) =>
       ipcRenderer.invoke("db-user-standard-get", id),
+    // FTS5 模糊检索 - 高性能全文搜索
+    fuzzySearch: (table: string, query: string, limit?: number) =>
+      ipcRenderer.invoke("db-fuzzy-search", table, query, limit),
+    // 逆向识别向导 - 测量反推标准规格
+    reverseIdentify: (type: string, measurements: Record<string, number>) =>
+      ipcRenderer.invoke("db-reverse-identify", type, measurements),
+    // Excel 导入 - 主进程解析 + JSON Schema 校验
+    importExcel: (templateType: string) =>
+      ipcRenderer.invoke("excel-import", templateType),
+    downloadTemplate: (templateType: string, savePath: string) =>
+      ipcRenderer.invoke("excel-download-template", templateType, savePath),
   },
 });

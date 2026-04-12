@@ -82,6 +82,17 @@ export function initDatabase() {
     `CREATE TABLE bolts_hex (designation TEXT PRIMARY KEY, d REAL, head_width_s REAL, head_height_k REAL, standard TEXT)`,
   ).run();
 
+  // FTS5 全文搜索虚拟表 - 高性能模糊检索 (Section 2.3.1)
+  db.prepare(
+    `CREATE VIRTUAL TABLE IF NOT EXISTS bearings_fts USING fts5(designation, inner_diameter, outer_diameter, width, C_r, C_0r, content='bearings_deep_groove', content_rowid='rowid')`,
+  ).run();
+  db.prepare(
+    `CREATE VIRTUAL TABLE IF NOT EXISTS bolts_fts USING fts5(designation, d, head_width_s, head_height_k, standard, content='bolts_hex', content_rowid='rowid')`,
+  ).run();
+  db.prepare(
+    `CREATE VIRTUAL TABLE IF NOT EXISTS threads_fts USING fts5(designation, d, pitch, d2, d1, stress_area, content='threads_iso_metric', content_rowid='rowid')`,
+  ).run();
+
   // 导入数据
   const insertIT = db.prepare(
     "INSERT INTO tolerance_it_grades (grade, size_index, value) VALUES (?, ?, ?)",
@@ -178,6 +189,19 @@ export function initDatabase() {
   });
   insertVersions();
   console.log("Data versions recorded");
+
+  // 同步 FTS5 索引 - 高性能模糊检索
+  db.exec(`
+    INSERT OR REPLACE INTO bearings_fts(rowid, designation, inner_diameter, outer_diameter, width, C_r, C_0r)
+    SELECT rowid, designation, inner_diameter, outer_diameter, width, C_r, C_0r FROM bearings_deep_groove;
+    
+    INSERT OR REPLACE INTO bolts_fts(rowid, designation, d, head_width_s, head_height_k, standard)
+    SELECT rowid, designation, d, head_width_s, head_height_k, standard FROM bolts_hex;
+    
+    INSERT OR REPLACE INTO threads_fts(rowid, designation, d, pitch, d2, d1, stress_area)
+    SELECT rowid, designation, d, pitch, d2, d1, stress_area FROM threads_iso_metric;
+  `);
+  console.log("FTS5 indexes built successfully");
 
   return db;
 }

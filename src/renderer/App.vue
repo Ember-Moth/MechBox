@@ -50,6 +50,10 @@ import ReportCenterPage from "./views/ReportCenterPage.vue";
 import SettingsPage from "./views/SettingsPage.vue";
 import FavoritesPage from "./views/FavoritesPage.vue";
 import AboutPage from "./views/AboutPage.vue";
+import ReverseIdentifyPage from "./views/ReverseIdentifyPage.vue";
+import MaterialSubstitutionPage from "./views/MaterialSubstitutionPage.vue";
+import ExcelImportPage from "./views/ExcelImportPage.vue";
+import LaTeXReportPage from "./views/LaTeXReportPage.vue";
 import { industrialCompactTheme } from "./themes/industrial-compact";
 
 const collapsed = ref(false);
@@ -82,6 +86,10 @@ const menuItems = [
     { key: "reports", icon: FileTextOutlined, label: "报告中心" },
     { key: "divider-5", type: "divider" },
     { key: "favorites", icon: StarOutlined, label: "我的收藏" },
+    { key: "reverse-identify", icon: ExperimentOutlined, label: "逆向识别" },
+    { key: "material-sub", icon: ExperimentOutlined, label: "材料代换" },
+    { key: "excel-import", icon: DashboardFilled, label: "Excel导入" },
+    { key: "latex-report", icon: FileTextOutlined, label: "LaTeX报告" },
     { key: "settings", icon: ControlOutlined, label: "设置" },
     { key: "about", icon: InfoCircleOutlined, label: "关于" },
 ];
@@ -93,11 +101,11 @@ function handleNavigation(event: Event) {
 }
 
 onMounted(() => {
-    window.addEventListener('navigate', handleNavigation);
+    window.addEventListener("navigate", handleNavigation);
 });
 
 onUnmounted(() => {
-    window.removeEventListener('navigate', handleNavigation);
+    window.removeEventListener("navigate", handleNavigation);
 });
 </script>
 
@@ -207,6 +215,18 @@ onUnmounted(() => {
                         </div>
                         <div v-else-if="selectedKeys[0] === 'favorites'">
                             <FavoritesPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'reverse-identify'">
+                            <ReverseIdentifyPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'material-sub'">
+                            <MaterialSubstitutionPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'excel-import'">
+                            <ExcelImportPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'latex-report'">
+                            <LaTeXReportPage />
                         </div>
                         <div v-else-if="selectedKeys[0] === 'about'">
                             <AboutPage />
