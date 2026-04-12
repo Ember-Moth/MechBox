@@ -31,6 +31,12 @@
 | 9.3 | CAD 联动与自动化配置 | ✅ | `src/renderer/views/SettingsPage.vue` |
 | 9.4 | 企业报告元数据与免责声明 | ✅ | `src/renderer/views/SettingsPage.vue` |
 | 10.1 | 密封系统热-力-化多场耦合 | ✅ | `src/renderer/engine/seals/multi-physics.ts` |
+| 11.1 | 严格类型定义 (消除 any) | ✅ | `src/renderer/types/standard-parts.ts` |
+| 11.1 | UnitInput 智能单位换算 | ✅ | `src/renderer/components/UnitInput.vue` |
+| 11.2 | 表单草稿持久化 (防丢失) | ✅ | `src/renderer/store/useFormDraftStore.ts` |
+| 11.4 | ERP/BOM 企业物料编码 | ✅ | `src/renderer/engine/bom-export.ts` |
+| 11.4 | 制造约束检查 (刀具干涉) | ✅ | `src/renderer/engine/seals/multi-physics.ts` |
+| 11.4 | 材料标准命名 (GB/T 引用) | ✅ | `data/materials-extended.json` |
 
 
 ---
