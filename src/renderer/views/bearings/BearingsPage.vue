@@ -231,10 +231,7 @@ function printReport() {
 
 <style scoped>
 .bearings-page { font-size: 12px; }
-.toolbar { background: #004d40; padding: 6px 16px; display: flex; justify-content: space-between; align-items: center; color: white; }
-.brand { font-weight: bold; font-size: 16px; letter-spacing: 1px; }
-.brand small { font-weight: normal; font-size: 10px; opacity: 0.8; margin-left: 8px; }
-.content-body { padding: 12px; background: #fff; }
+/* 使用全局统一样式 */
 
 .result-section { border-top: 3px solid #004d40; padding-top: 12px; margin-top: 16px; }
 .result-column-header { font-weight: bold; color: #444; margin-bottom: 8px; text-align: center; background: #e0f2f1; padding: 4px 0; }

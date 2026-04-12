@@ -350,10 +350,7 @@ function printReport() {
 
 <style scoped>
 .bolts-page { font-size: 12px; }
-.toolbar { background: #004d40; padding: 6px 16px; display: flex; justify-content: space-between; align-items: center; color: white; }
-.brand { font-weight: bold; font-size: 16px; letter-spacing: 1px; }
-.brand small { font-weight: normal; font-size: 10px; opacity: 0.8; margin-left: 8px; }
-.content-body { padding: 12px; background: #fff; }
+/* 使用全局统一样式 */
 
 .hint { font-size: 11px; color: #888; margin-top: 4px; }
 

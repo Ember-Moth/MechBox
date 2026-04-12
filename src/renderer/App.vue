@@ -514,5 +514,72 @@ watch(
     .app-content {
         padding: 12px;
     }
+
+    /* 窄屏自动折叠侧边栏 */
+    .sider {
+        --antd-layout-sider-width: 60px;
+    }
+}
+
+/* 移动端适配 (≤768px) */
+@media (max-width: 768px) {
+    /* 侧边栏默认折叠 */
+    .sider {
+        --antd-layout-sider-width: 0px;
+    }
+
+    /* 表格横向滚动 */
+    :deep(.ant-table-wrapper) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    :deep(.ant-table) {
+        min-width: 500px;
+    }
+
+    /* 内容区全宽无间距 */
+    .app-content {
+        padding: 8px;
+    }
+
+    /* 卡片紧凑 */
+    :deep(.ant-card-small .ant-card-body) {
+        padding: 8px;
+    }
+
+    /* 表单全宽 */
+    :deep(.ant-row) {
+        margin: 0 !important;
+    }
+
+    :deep(.ant-col) {
+        padding: 0 !important;
+    }
+}
+
+/* 超小屏 (≤480px) */
+@media (max-width: 480px) {
+    .app-content {
+        padding: 4px;
+    }
+
+    :deep(.ant-card) {
+        border-radius: 4px;
+    }
+
+    /* 描述列表单列紧凑 */
+    :deep(.ant-descriptions-bordered) {
+        font-size: 11px;
+    }
+
+    :deep(.ant-descriptions-item-label) {
+        width: 35% !important;
+        padding: 4px 6px !important;
+    }
+
+    :deep(.ant-descriptions-item-content) {
+        padding: 4px 6px !important;
+    }
 }
 </style>

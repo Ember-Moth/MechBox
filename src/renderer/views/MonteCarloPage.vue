@@ -232,10 +232,7 @@ onUnmounted(() => worker?.terminate())
 
 <style scoped>
 .monte-carlo-page { max-width: 1400px; margin: 0 auto }
-.toolbar { background: #004d40; padding: 6px 16px; display: flex; justify-content: space-between; align-items: center; color: white; border-radius: 4px; margin-bottom: 16px }
-.brand { font-weight: bold; font-size: 16px; letter-spacing: 1px }
-.brand small { font-weight: normal; font-size: 10px; opacity: 0.8; margin-left: 8px }
-.content-body { background: #fff; border-radius: 8px; padding: 16px }
+/* 使用全局统一样式 */
 .histogram-container { height: 200px; display: flex; flex-direction: column }
 .histogram-bars { flex: 1; display: flex; align-items: flex-end; gap: 1px; padding: 0 10px }
 .histogram-bar-wrapper { flex: 1; height: 100%; display: flex; align-items: flex-end }

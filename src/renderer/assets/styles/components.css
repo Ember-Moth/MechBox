@@ -1,0 +1,256 @@
+/**
+ * 全局可复用样式组件 (Section 11.2)
+ * 所有页面共享的通用样式，避免重复定义
+ * 别名：.toolbar = .page-toolbar, .content-body = .page-content
+ */
+
+/* ==================== 页面布局 ==================== */
+
+/* 工具栏 - 所有页面统一使用 */
+.page-toolbar,
+.toolbar {
+  background: #004d40;
+  padding: 6px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-brand,
+.brand {
+  font-weight: bold;
+  font-size: 16px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.page-brand small,
+.brand small {
+  font-weight: normal;
+  font-size: 10px;
+  opacity: 0.8;
+  margin-left: 8px;
+}
+
+/* 内容区 - 白色卡片容器 */
+.page-content,
+.content-body {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+/* ==================== 结果展示网格 ==================== */
+
+/* 结果网格 - 替代各页面重复的 result-grid */
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+
+.result-label {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.result-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.result-value.error {
+  color: #ef4444;
+}
+
+.result-value.warning {
+  color: #f59e0b;
+}
+
+.result-value.success {
+  color: #22c55e;
+}
+
+/* ==================== 公式展示区 ==================== */
+
+.formula-box {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f0f7ff;
+  border-radius: 4px;
+  border-left: 3px solid #1e3a8a;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.formula-box strong {
+  color: #1e3a8a;
+}
+
+.formula-box div {
+  color: #334155;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ==================== 响应式布局 ==================== */
+
+/* 窄屏/平板 (≤1024px) */
+@media (max-width: 1024px) {
+  .result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-toolbar {
+    padding: 8px 12px;
+  }
+
+  .page-brand {
+    font-size: 14px;
+  }
+}
+
+/* 移动端 (≤768px) */
+@media (max-width: 768px) {
+  /* 页面整体布局 */
+  .page-content {
+    padding: 12px;
+    border-radius: 4px;
+  }
+
+  /* 工具栏调整 */
+  .page-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .page-toolbar .ant-space {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* 表格横向溢出处理 */
+  :deep(.ant-table-wrapper) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :deep(.ant-table) {
+    min-width: 600px;
+  }
+
+  /* 栅格布局调整 */
+  :deep(.ant-row) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  :deep(.ant-col) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* 表单区域全宽 */
+  :deep(.ant-form-item) {
+    margin-bottom: 12px;
+  }
+
+  /* 描述列表单列 */
+  :deep(.ant-descriptions-bordered) {
+    font-size: 11px;
+  }
+
+  :deep(.ant-descriptions-item-label) {
+    width: 40% !important;
+  }
+
+  /* 结果网格单列 */
+  .result-grid {
+    grid-template-columns: 1fr;
+    gap: 6px 12px;
+  }
+
+  .result-label {
+    font-size: 11px;
+  }
+
+  .result-value {
+    font-size: 13px;
+  }
+
+  /* 公式框调整 */
+  .formula-box {
+    padding: 10px;
+    font-size: 11px;
+  }
+
+  /* 侧边栏折叠状态下内容区自适应 */
+  :deep(.ant-layout-sider-collapsed + .ant-layout) {
+    margin-left: 0 !important;
+  }
+}
+
+/* 超小屏 (≤480px) */
+@media (max-width: 480px) {
+  .page-toolbar {
+    padding: 6px 10px;
+  }
+
+  .page-brand {
+    font-size: 13px;
+  }
+
+  .page-brand small {
+    display: none;
+  }
+
+  .page-content {
+    padding: 10px;
+    margin: 0 -4px;
+    border-radius: 0;
+  }
+
+  /* 紧凑模式下的表格 */
+  :deep(.ant-table-small) {
+    font-size: 11px;
+  }
+
+  :deep(.ant-table-small .ant-table-cell) {
+    padding: 4px 6px !important;
+  }
+
+  /* 描述列表紧凑 */
+  :deep(.ant-descriptions-small .ant-descriptions-item-label),
+  :deep(.ant-descriptions-small .ant-descriptions-item-content) {
+    padding: 6px 8px !important;
+  }
+}
+
+/* ==================== 打印样式 ==================== */
+
+@media print {
+  .page-toolbar {
+    display: none !important;
+  }
+
+  .page-content {
+    padding: 0;
+    border-radius: 0;
+  }
+
+  :deep(.ant-btn),
+  :deep(.ant-space) {
+    display: none !important;
+  }
+}
