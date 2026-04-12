@@ -1,6 +1,37 @@
 # MechBox (MechCalc) 架构演进与下一代改进计划 (纯本地化与重火力演进版)
 
-> **文档定位**：本文档基于 MechBox 当前的实际代码实现（Vue 3 + Electron + SQLite + Solver 引擎），从资深工业软件架构师的视角，总结已落地的架构重构成果，并针对“100% 纯本地化、超大容量知识库、极致丰富功能”的重度辅助设计软件目标，提出下一阶段（v2.0+）的深度缺陷剖析与演进方案，**并提供具体的底层技术实现路径**。
+> **文档定位**：本文档基于 MechBox 当前的实际代码实现（Vue 3 + Electron + SQLite + Solver 引擎），从资深工业软件架构师的视角，总结已落地的架构重构成果，并针对"100% 纯本地化、超大容量知识库、极致丰富功能"的重度辅助设计软件目标，提出下一阶段（v2.0+）的深度缺陷剖析与演进方案，**并提供具体的底层技术实现路径**。
+
+---
+
+## 0. 已落地成果汇总 (Completed Sections)
+
+| 章节 | 改进项 | 状态 | 实现文件 |
+|------|--------|------|---------|
+| 1.3.1 | 约束求解器 (Newton-Raphson/二分法/离散优化) | ✅ | `src/renderer/engine/solver.ts` |
+| 1.3.2 | Monte Carlo 概率模拟 (Web Worker 并行) | ✅ | `src/renderer/views/MonteCarloPage.vue` |
+| 2.3.1 | SQLite FTS5 全文搜索 | ✅ | `src/main/db/database.ts` |
+| 2.3.3 | Excel 导入引擎 (xlsx + ajv 校验) | ✅ | `src/main/services/excel-import.ts` |
+| 3 | WebSocket 本地 CAD 双向同步 | ✅ | `src/main/services/websocket-server.ts` |
+| 4.1/4.2 | Three.js 3D 参数化数字孪生 | ✅ | `src/renderer/components/Preview3D.vue` |
+| 4.3.3 | 侧边栏语义化深层折叠导航 | ✅ | `src/renderer/App.vue` |
+| 5.1 | 参数扫描 + ECharts 敏感度云图 | ✅ | `src/renderer/views/ParamScanPage.vue` |
+| 5.2 | LaTeX 工程报告导出 | ✅ | `src/renderer/views/LaTeXReportPage.vue` |
+| 5.3 | BOM 物料清单自动汇总 | ✅ | `src/renderer/engine/bom-export.ts` |
+| 5.4 | DFM 公差成本映射 | ✅ | `src/renderer/views/DFMAnalysisPage.vue` |
+| 5.5 | 失效诊断专家系统 | ✅ | `src/renderer/engine/failure-diagnosis.ts` |
+| 5.6 | 逆向识别向导 (测量反推规格) | ✅ | `src/renderer/views/ReverseIdentifyPage.vue` |
+| 5.6 | 跨国材料代换指南 (GB/ASTM/DIN/JIS) | ✅ | `src/renderer/views/MaterialSubstitutionPage.vue` |
+| 6.2 | **Rust 核心 (napi-rs)** | ✅ | `rust-core/src/lib.rs` |
+| 8.1 | Vue Router 迁移 + 代码分割 | ✅ | `src/renderer/router/index.ts` |
+| 8.2 | 数据库持久化修复 (移除 DROP TABLE) | ✅ | `src/main/db/database.ts` |
+| 8.3 | TypeScript 类型契约补全 | ✅ | `src/renderer/types/electron.d.ts` |
+| 9.1 | 求解器精度与性能控制 | ✅ | `src/renderer/engine/enterprise-settings.ts` |
+| 9.2 | 知识库与数据隔离管理 | ✅ | `src/renderer/views/SettingsPage.vue` |
+| 9.3 | CAD 联动与自动化配置 | ✅ | `src/renderer/views/SettingsPage.vue` |
+| 9.4 | 企业报告元数据与免责声明 | ✅ | `src/renderer/views/SettingsPage.vue` |
+| 10.1 | 密封系统热-力-化多场耦合 | ✅ | `src/renderer/engine/seals/multi-physics.ts` |
+
 
 ---
 
