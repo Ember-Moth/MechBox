@@ -271,9 +271,9 @@ onUnmounted(() => {
 }
 
 .menu-scroll :deep(.ant-menu-sub .ant-menu-item) {
-    font-size: 12px !important;
-    height: 32px !important;
-    line-height: 32px !important;
+    font-size: 14px !important;
+    height: 36px !important;
+    line-height: 36px !important;
     font-weight: normal !important;
 }
 

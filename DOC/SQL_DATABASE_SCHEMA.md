@@ -637,7 +637,169 @@ ORDER BY module_value;
 
 ---
 
-## 11. 结论
+## 11. 可用网络数据源清单
+
+下面整理的是前期调研中确认过、适合用于 MechBox 建库的数据来源。这里区分“标准主源”和“工程辅助源”，避免把厂家目录误当成标准正文。
+
+### 11.1 A 级：适合做主数据源
+
+#### 1. 国家标准全文公开系统
+
+- 适合品类：紧固件、螺纹、公差、键、部分材料标准、部分机械通用件
+- 适合用途：第一批公开可落库数据源
+- 特点：
+  - 官方来源
+  - 可获取大量 `GB` / `GB/T`
+  - 更适合结构化抽取为 SQLite
+- 当前调研结论：
+  - 现行有效 `GB` 强制性国家标准 `2,187` 项，其中非采标 `1,733` 项可在线阅读和下载
+  - 现行有效 `GB/T` 推荐性国家标准 `46,584` 项，其中非采标 `30,676` 项可在线阅读和下载，采标 `15,908` 项仅提供题录
+- 入口：
+  - https://openstd.samr.gov.cn/bzgk/std/index
+
+#### 2. 付费国际标准正文
+
+- 适合品类：O 型圈、螺栓/螺母/垫圈、轴承、齿轮、材料
+- 适合用途：正式标准数据库主源
+- 建议标准体系：
+  - `ISO`
+  - `ASME`
+  - `SAE`
+  - `AGMA`
+  - `ABMA`
+  - `DIN`
+  - `JIS`
+- 注意：
+  - 这类标准通常受版权限制
+  - 适合购买后做内部结构化整理
+  - 不适合默认公开再分发标准全文
+
+### 11.2 B 级：适合做工程辅助源
+
+#### 1. MatWeb
+
+- 适合品类：材料牌号、材料性能
+- 适合用途：材料参数检索、材料属性补充、快速校验
+- 说明：
+  - 公开可查
+  - 覆盖大量材料数据表
+  - 更适合作为工程检索源，不等同于标准正文
+- 链接：
+  - https://www.matweb.com/
+
+#### 2. Total Materia
+
+- 适合品类：材料牌号、多国等效牌号、性能对照
+- 适合用途：材料代换、跨国牌号对照、属性比对
+- 说明：
+  - 商业数据库
+  - 非常适合做材料牌号映射表设计参考
+  - 不适合作为直接抓取全库的默认来源
+- 链接：
+  - https://docs.totalmateria.com/
+
+### 11.3 C 级：适合做商品级目录与选型补充
+
+#### 1. Parker O-Ring Handbook
+
+- 适合品类：密封圈、沟槽设计、介质相容性、经验参数
+- 适合用途：补充 O 型圈材质、压缩率、沟槽设计规则
+- 说明：
+  - 行业内常用
+  - 更适合作为设计规则和经验参数来源
+  - 不应等同于正式标准全文
+- 链接：
+  - https://discover.parker.com/Parker-ORing-Handbook-ORD-5700
+
+#### 2. NSK Catalogs and CAD
+
+- 适合品类：轴承型号、边界尺寸、额定载荷、极限转速
+- 适合用途：补充商品级轴承库和型号库
+- 说明：
+  - 非常适合做实际选型数据库
+  - 适合作为 `bearing_catalog` 的重要补充来源
+- 链接：
+  - https://www.nsk.com/catalogs-and-cad/
+
+#### 3. Bossard Technical Resources
+
+- 适合品类：螺纹、紧固件、公差、预紧力、摩擦与装配参数
+- 适合用途：紧固件工程辅助计算、术语统一、数据交叉校验
+- 说明：
+  - 偏工程参考资料
+  - 很适合接入计算模块
+  - 不建议单独作为标准件主数据真源
+- 链接：
+  - https://www.bossard.com/us-en/assembly-technology-expert/technical-information-and-tools/technical-resources/
+
+#### 4. MISUMI Technical Information
+
+- 适合品类：螺钉、螺母、螺纹、标准件品类梳理
+- 适合用途：规格分类、常用系列、标准体系梳理
+- 说明：
+  - 适合作为标准件字典和界面展示辅助
+  - 适合补商品型号和系列命名
+- 链接：
+  - https://uk.misumi-ec.com/en/techblog/general-info/screws-overview-standard/
+
+#### 5. KHK Gear World
+
+- 适合品类：现货齿轮、齿条、模块系列、孔径和结构系列
+- 适合用途：商品级齿轮选型、系列参数库
+- 说明：
+  - 适合作为 `gear_standard_modules` 和后续 `gear_catalog` 的补充
+  - 不是 AGMA/ISO 正式标准正文
+- 链接：
+  - https://khkgears.us/gear-world/
+
+---
+
+## 12. 典型标准与网站映射
+
+为了后续采集和录入更直接，建议按品类建立“标准号 -> 来源网站 -> 表结构”的映射表。
+
+| 品类 | 推荐标准/来源 | 用途 | 推荐落表 |
+|------|---------------|------|----------|
+| O 型圈 | `SAE AS568F` + Parker Handbook | 尺寸主表 + 沟槽规则 | `oring_catalog` |
+| 螺栓/螺母/垫圈 | `GB/T` + `ASME B18` + `Bossard` + `MISUMI` | 标准尺寸 + 工程辅助参数 | `fastener_nuts` / `fastener_washers` / 后续 `fastener_bolts` |
+| 螺纹 | `ISO 261` / `GB/T` + `Bossard` | 几何主尺寸、底孔、应力面积 | `threads_iso_metric` + `parts_dimensions` |
+| 材料牌号 | `GB/T` + `MatWeb` + `Total Materia` | 牌号、性能、国际代换 | `materials_master` / `material_mechanical_props` / `material_equivalents` |
+| 轴承 | `ABMA/ISO` + `NSK` | 标准结构 + 商品级型号 | `bearing_catalog` |
+| 齿轮 | `AGMA/ISO` + `KHK` | 标准模数 + 商品系列 | `gear_standard_modules` + 后续 `gear_catalog` |
+
+---
+
+## 13. 网络采集与版权边界建议
+
+为了避免后续建库踩版权风险，建议在文档和代码中明确区分：
+
+- `public_open`
+  - 官方公开可在线阅读或下载的数据
+  - 例如部分 `GB` / `GB/T`
+- `purchased_standard`
+  - 购买后内部使用的国际标准
+- `vendor_catalog`
+  - 厂家目录、技术手册、商品级资料
+- `reference_db`
+  - 工程数据库、代换数据库、检索型平台
+
+建议在 `standards_meta.source_type` 或新增字段中明确记录来源，便于后续导入器和 UI 做提示。
+
+例如：
+
+```sql
+UPDATE standards_meta
+SET source_type = 'public_open'
+WHERE standard_code IN ('GB/T 5782', 'GB/T 699', 'GB/T 3077');
+
+UPDATE standards_meta
+SET source_type = 'purchased_standard'
+WHERE standard_code IN ('AS568F');
+```
+
+---
+
+## 14. 结论
 
 这套方案的核心不是“把所有零件塞进一个大表”，而是：
 
