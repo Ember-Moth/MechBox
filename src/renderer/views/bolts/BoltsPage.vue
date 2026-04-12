@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { calcPreload, calcStress, recommendTorque } from '../../engine/bolts/strength'
+import { calcVDI2230 } from '../../engine/bolts/vdi2230'
 import { exportBoltAssemblyToSTEP } from '../../engine/cad-export'
 import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, DownloadOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
 import jsPDF from 'jspdf'
@@ -41,6 +42,20 @@ const preloadResult = computed(() => {
 const stressResult = computed(() => {
   if (!selectedBolt.value || conditions.value.axialForce <= 0) return null
   return calcStress(selectedBolt.value, conditions.value.axialForce, conditions.value.shearForce)
+})
+
+// VDI 2230 全生命周期校核 (Section 10.3)
+const vdi2230Result = computed(() => {
+  if (!selectedBolt.value || conditions.value.torque <= 0) return null
+  return calcVDI2230({
+    boltDiameter: selectedBolt.value.d,
+    boltClass: propertyClass.value,
+    preloadForce: preloadResult.value,
+    axialWorkingForce: conditions.value.axialForce,
+    shearWorkingForce: conditions.value.shearForce,
+    cycles: 100000,  // 假设10万次循环
+    surfaceRoughness: 3.2  // 默认 Ra 3.2
+  })
 })
 
 // Section 11.3: Live input validation
@@ -276,6 +291,30 @@ function printReport() {
                 v-else
                 :message="`安全系数: ${(640 / stressResult.value.von_mises).toFixed(2)} (基于8.8级屈服强度)`"
                 type="success"
+                show-icon
+                style="margin-top: 12px"
+              />
+            </div>
+
+            <a-divider />
+
+            <!-- VDI 2230 全生命周期校核 (Section 10.3) -->
+            <div v-if="vdi2230Result" class="result-section">
+              <div class="result-column-header">VDI 2230 全生命周期校核</div>
+              <div class="result-grid">
+                <div class="res-label">屈服安全系数</div>
+                <div class="res-value" :class="{ error: vdi2230Result.value.yieldSafety < 1.5 }">{{ vdi2230Result.value.yieldSafety.toFixed(2) }}</div>
+                <div class="res-label">沉降损失</div>
+                <div class="res-value">{{ vdi2230Result.value.settlingLoss.toFixed(2) }} kN</div>
+                <div class="res-label">残余夹紧力</div>
+                <div class="res-value" :class="{ error: vdi2230Result.value.residualClampForce < 0 }">{{ vdi2230Result.value.residualClampForce.toFixed(2) }} kN</div>
+              </div>
+
+              <a-alert
+                v-for="(w, index) in vdi2230Result.value.warnings"
+                :key="index"
+                :message="w.message"
+                :type="w.level === 'error' ? 'error' : (w.level === 'warning' ? 'warning' : 'info')"
                 show-icon
                 style="margin-top: 12px"
               />

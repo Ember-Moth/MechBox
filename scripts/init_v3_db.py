@@ -19,6 +19,18 @@ KHK_URLS = [
     "https://www.khkgears.us/catalog/product/SR1-500",
     "https://www.khkgears.us/catalog/product/MM2-30",
     "https://www.khkgears.us/catalog/product/SMSG1-25R",
+    "https://www.khkgears.us/catalog/product/SS1-120H",
+    "https://www.khkgears.us/catalog/product/SM1-25",
+    "https://www.khkgears.us/catalog/product/KHG2-22RJ19",
+    "https://www.khkgears.us/catalog/product/PR1.5-1000",
+    "https://www.khkgears.us/catalog/product/SHE5-24L/",
+    "https://www.khkgears.us/catalog/product/SM6-25",
+    "https://www.khkgears.us/catalog/product/SMA1-25",
+    "https://www.khkgears.us/catalog/product/SRF6-1000H/",
+    "https://www.khkgears.us/catalog/product/SSG3-24",
+    "https://www.khkgears.us/catalog/product/SS6-18",
+    "https://www.khkgears.us/catalog/product/KRF3-1000H/",
+    "https://www.khkgears.us/catalog/product/SMS6-25R",
 ]
 
 

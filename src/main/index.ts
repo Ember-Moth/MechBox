@@ -96,11 +96,6 @@ function registerIpcHandlers() {
   });
 
   // 螺栓查询
-  ipcMain.handle("db-query-bolts", (_) => {
-    return getDatabase().prepare("SELECT * FROM fastener_hex_bolt").all();
-  });
-
-  // FTS5 全文搜索
   ipcMain.handle("db-search", (_, query: string, limit: number = 20) => {
     try {
       return getDatabase().prepare(
@@ -118,32 +113,27 @@ function registerIpcHandlers() {
     return getDatabase().prepare("SELECT * FROM material_grade").all();
   });
 
-  // 螺纹查询
-  ipcMain.handle("db-query-threads", (_) => {
-    return getDatabase().prepare("SELECT * FROM thread_metric").all();
-  });
-
   // 逆向识别向导 - 通过测量值反推标准规格 (Section 5.6)
   ipcMain.handle("db-reverse-identify", (_, type: string, measurements: Record<string, number>) => {
     if (type === 'thread') {
       // 通过外径和螺距反推螺纹规格
       const { outerDiameter, pitch } = measurements;
       const results = getDatabase().prepare(
-        `SELECT *, ABS(d - ?) + ABS(pitch - ?) as diff FROM threads_iso_metric ORDER BY diff ASC LIMIT 5`
+        `SELECT *, ABS(nominal_d - ?) + ABS(pitch - ?) as diff FROM thread_metric ORDER BY diff ASC LIMIT 5`
       ).all(outerDiameter, pitch);
       return results;
     } else if (type === 'bearing') {
       // 通过内径、外径、宽度反推轴承型号
       const { id, od, width } = measurements;
       const results = getDatabase().prepare(
-        `SELECT *, ABS(inner_diameter - ?) + ABS(outer_diameter - ?) + ABS(width - ?) as diff FROM bearings_deep_groove ORDER BY diff ASC LIMIT 5`
+        `SELECT *, ABS(inner_diameter - ?) + ABS(outer_diameter - ?) + ABS(width - ?) as diff FROM bearing_basic ORDER BY diff ASC LIMIT 5`
       ).all(id || 0, od || 0, width || 0);
       return results;
     } else if (type === 'bolt') {
       // 通过直径、头宽、头高反推螺栓规格
       const { d, headWidth, headHeight } = measurements;
       const results = getDatabase().prepare(
-        `SELECT *, ABS(d - ?) + ABS(head_width_s - ?) + ABS(head_height_k - ?) as diff FROM bolts_hex ORDER BY diff ASC LIMIT 5`
+        `SELECT *, ABS(nominal_d - ?) + ABS(head_width_s - ?) + ABS(head_height_k - ?) as diff FROM fastener_hex_bolt ORDER BY diff ASC LIMIT 5`
       ).all(d || 0, headWidth || 0, headHeight || 0);
       return results;
     }
