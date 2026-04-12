@@ -8,6 +8,9 @@ import {
     ToolOutlined,
     StarOutlined,
     InfoCircleOutlined,
+    SwapOutlined,
+    DatabaseOutlined,
+    ControlOutlined,
 } from "@ant-design/icons-vue";
 import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
@@ -15,6 +18,9 @@ import TolerancesPage from "./views/tolerances/TolerancesPage.vue";
 import SealsPage from "./views/seals/SealsPage.vue";
 import BearingsPage from "./views/bearings/BearingsPage.vue";
 import BoltsPage from "./views/bolts/BoltsPage.vue";
+import UnitConverterPage from "./views/UnitConverterPage.vue";
+import MaterialLibraryPage from "./views/MaterialLibraryPage.vue";
+import SettingsPage from "./views/SettingsPage.vue";
 import FavoritesPage from "./views/FavoritesPage.vue";
 import AboutPage from "./views/AboutPage.vue";
 import { industrialCompactTheme } from "./themes/industrial-compact";
@@ -28,7 +34,12 @@ const menuItems = [
     { key: "seals", icon: BlockOutlined, label: "密封圈" },
     { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
     { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },
+    { key: "divider-1", type: "divider" },
+    { key: "units", icon: SwapOutlined, label: "单位换算" },
+    { key: "materials", icon: DatabaseOutlined, label: "材料库" },
+    { key: "divider-2", type: "divider" },
     { key: "favorites", icon: StarOutlined, label: "我的收藏" },
+    { key: "settings", icon: ControlOutlined, label: "设置" },
     { key: "about", icon: InfoCircleOutlined, label: "关于" },
 ];
 
@@ -57,12 +68,15 @@ onUnmounted(() => {
                     theme="dark"
                     mode="inline"
                 >
-                    <a-menu-item v-for="item in menuItems" :key="item.key">
-                        <template #icon>
-                            <component :is="item.icon" />
-                        </template>
-                        <span>{{ item.label }}</span>
-                    </a-menu-item>
+                    <template v-for="item in menuItems" :key="item.key">
+                        <a-menu-divider v-if="item.type === 'divider'" />
+                        <a-menu-item v-else>
+                            <template #icon>
+                                <component :is="item.icon" />
+                            </template>
+                            <span>{{ item.label }}</span>
+                        </a-menu-item>
+                    </template>
                 </a-menu>
             </a-layout-sider>
             <a-layout>
@@ -99,6 +113,15 @@ onUnmounted(() => {
                         </div>
                         <div v-else-if="selectedKeys[0] === 'bolts'">
                             <BoltsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'units'">
+                            <UnitConverterPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'materials'">
+                            <MaterialLibraryPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'settings'">
+                            <SettingsPage />
                         </div>
                         <div v-else-if="selectedKeys[0] === 'favorites'">
                             <FavoritesPage />

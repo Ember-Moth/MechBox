@@ -5,7 +5,11 @@
       "Bash(timeout *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(npm test)"
+      "Bash(npm test)",
+      "Bash(rm *)",
+      "Bash(file *)",
+      "Bash(sleep *)",
+      "Bash(pkill *)"
     ]
   },
   "$version": 3
