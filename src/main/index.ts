@@ -38,44 +38,32 @@ function createWindow(): void {
 
 // 注册数据库相关的 IPC 处理器
 function registerIpcHandlers() {
-  ipcMain.handle("db-query-it-grade", (_, grade, sizeIndex) => {
-    return getDatabase()
-      .prepare(
-        "SELECT value FROM tolerance_it_grades WHERE grade = ? AND size_index = ?",
-      )
-      .get(grade, sizeIndex);
+  ipcMain.handle("db-query-bearings", (_) => {
+    return getDatabase().prepare("SELECT * FROM bearing_basic").all();
   });
 
-  ipcMain.handle("db-query-deviation", (_, type, position, sizeIndex) => {
-    return getDatabase()
-      .prepare(
-        "SELECT value FROM fundamental_deviations WHERE type = ? AND position = ? AND size_index = ?",
-      )
-      .get(type, position, sizeIndex);
+  ipcMain.handle("db-query-threads", (_) => {
+    return getDatabase().prepare("SELECT * FROM thread_metric").all();
   });
 
-  ipcMain.handle("db-query-oring-list", (_, standard) => {
-    return getDatabase()
-      .prepare("SELECT * FROM oring_standards WHERE standard = ?")
-      .all(standard);
+  ipcMain.handle("db-query-bolts", (_) => {
+    return getDatabase().prepare("SELECT * FROM fastener_hex_bolt").all();
+  });
+
+  // O-ring queries (V3)
+  ipcMain.handle("db-query-oring-list", (_, standard?: string) => {
+    if (standard) {
+      return getDatabase()
+        .prepare("SELECT * FROM seal_oring_size WHERE standard_id = ?")
+        .all(standard);
+    }
+    return getDatabase().prepare("SELECT * FROM seal_oring_size").all();
   });
 
   ipcMain.handle("db-query-oring-spec", (_, standard, code) => {
     return getDatabase()
-      .prepare("SELECT * FROM oring_standards WHERE standard = ? AND code = ?")
+      .prepare("SELECT * FROM seal_oring_size WHERE standard_id = ? AND dash_code = ?")
       .get(standard, code);
-  });
-
-  ipcMain.handle("db-query-bearings", (_) => {
-    return getDatabase().prepare("SELECT * FROM bearings_deep_groove").all();
-  });
-
-  ipcMain.handle("db-query-threads", (_) => {
-    return getDatabase().prepare("SELECT * FROM threads_iso_metric").all();
-  });
-
-  ipcMain.handle("db-query-bolts", (_) => {
-    return getDatabase().prepare("SELECT * FROM bolts_hex").all();
   });
 
   // 数据版本查询
