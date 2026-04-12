@@ -20,11 +20,15 @@ import {
     PercentageOutlined,
     ThunderboltOutlined,
     RocketOutlined,
-    DashboardFilled,
     ScissorOutlined,
     DashOutlined,
     MedicineBoxOutlined,
     ExperimentOutlined,
+    FolderOutlined,
+    SafetyOutlined,
+    SwapOutlined as ThunderboltCircleOutlined,
+    SearchOutlined,
+    ImportOutlined,
 } from "@ant-design/icons-vue";
 import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
@@ -59,42 +63,76 @@ import { industrialCompactTheme } from "./themes/industrial-compact";
 const collapsed = ref(false);
 const selectedKeys = ref(["dashboard"]);
 
-const menuItems = [
+// Section 4.3.3: Semantic folder groups (replaces flat menu with dividers)
+const menuGroups = [
+    {
+        key: "design",
+        icon: SafetyOutlined,
+        title: "基础设计与选型",
+        children: [
+            { key: "tolerances", icon: ColumnWidthOutlined, label: "公差配合" },
+            { key: "seals", icon: BlockOutlined, label: "密封圈" },
+            { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
+            { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },
+        ],
+    },
+    {
+        key: "drive",
+        icon: ThunderboltCircleOutlined,
+        title: "传动与动力系统",
+        children: [
+            { key: "drives", icon: ThunderboltOutlined, label: "传动工具" },
+            { key: "gears", icon: RocketOutlined, label: "齿轮计算" },
+            { key: "springs", icon: ScissorOutlined, label: "弹簧计算" },
+            { key: "hydraulics", icon: DashOutlined, label: "液压气动" },
+            { key: "motors", icon: ExperimentOutlined, label: "电机选型" },
+            { key: "shafts", icon: MedicineBoxOutlined, label: "轴强度校核" },
+        ],
+    },
+    {
+        key: "reference",
+        icon: SearchOutlined,
+        title: "工程资料与互换库",
+        children: [
+            { key: "units", icon: SwapOutlined, label: "单位换算" },
+            { key: "materials", icon: DatabaseOutlined, label: "材料库" },
+            { key: "standard-parts", icon: FileSearchOutlined, label: "标准件库" },
+            { key: "reverse-identify", icon: ExperimentOutlined, label: "逆向识别" },
+            { key: "material-sub", icon: ExperimentOutlined, label: "材料代换" },
+        ],
+    },
+    {
+        key: "analysis",
+        icon: BarChartOutlined,
+        title: "高级分析与自动化",
+        children: [
+            { key: "param-scan", icon: BarChartOutlined, label: "参数扫描" },
+            { key: "monte-carlo", icon: PercentageOutlined, label: "蒙特卡洛" },
+            { key: "dfm", icon: CloudUploadOutlined, label: "DFM分析" },
+            { key: "failure-diag", icon: WarningOutlined, label: "失效诊断" },
+            { key: "excel-import", icon: ImportOutlined, label: "Excel导入" },
+            { key: "latex-report", icon: FileTextOutlined, label: "LaTeX报告" },
+        ],
+    },
+    {
+        key: "workspace",
+        icon: FolderOutlined,
+        title: "工作空间",
+        children: [
+            { key: "projects", icon: FolderOpenOutlined, label: "项目中心" },
+            { key: "reports", icon: FileTextOutlined, label: "报告中心" },
+            { key: "favorites", icon: StarOutlined, label: "我的收藏" },
+        ],
+    },
+];
+
+// System items pinned at bottom (Section 4.3.3 Split Layout)
+const systemItems = [
     { key: "dashboard", icon: DashboardOutlined, label: "工作台" },
-    { key: "divider-1", type: "divider" },
-    { key: "tolerances", icon: ColumnWidthOutlined, label: "公差配合" },
-    { key: "seals", icon: BlockOutlined, label: "密封圈" },
-    { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
-    { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },
-    { key: "drives", icon: ThunderboltOutlined, label: "传动工具" },
-    { key: "gears", icon: RocketOutlined, label: "齿轮计算" },
-    { key: "springs", icon: ScissorOutlined, label: "弹簧计算" },
-    { key: "hydraulics", icon: DashOutlined, label: "液压气动" },
-    { key: "motors", icon: ExperimentOutlined, label: "电机选型" },
-    { key: "shafts", icon: MedicineBoxOutlined, label: "轴强度校核" },
-    { key: "divider-2", type: "divider" },
-    { key: "units", icon: SwapOutlined, label: "单位换算" },
-    { key: "materials", icon: DatabaseOutlined, label: "材料库" },
-    { key: "standard-parts", icon: FileSearchOutlined, label: "标准件库" },
-    { key: "divider-3", type: "divider" },
-    { key: "param-scan", icon: BarChartOutlined, label: "参数扫描" },
-    { key: "monte-carlo", icon: PercentageOutlined, label: "蒙特卡洛" },
-    { key: "dfm", icon: CloudUploadOutlined, label: "DFM分析" },
-    { key: "failure-diag", icon: WarningOutlined, label: "失效诊断" },
-    { key: "divider-4", type: "divider" },
-    { key: "projects", icon: FolderOpenOutlined, label: "项目中心" },
-    { key: "reports", icon: FileTextOutlined, label: "报告中心" },
-    { key: "divider-5", type: "divider" },
-    { key: "favorites", icon: StarOutlined, label: "我的收藏" },
-    { key: "reverse-identify", icon: ExperimentOutlined, label: "逆向识别" },
-    { key: "material-sub", icon: ExperimentOutlined, label: "材料代换" },
-    { key: "excel-import", icon: DashboardFilled, label: "Excel导入" },
-    { key: "latex-report", icon: FileTextOutlined, label: "LaTeX报告" },
     { key: "settings", icon: ControlOutlined, label: "设置" },
     { key: "about", icon: InfoCircleOutlined, label: "关于" },
 ];
 
-// Handle navigation events from Dashboard
 function handleNavigation(event: Event) {
     const customEvent = event as CustomEvent;
     selectedKeys.value = [customEvent.detail.module];
@@ -112,23 +150,30 @@ onUnmounted(() => {
 <template>
     <ConfigProvider :theme="industrialCompactTheme">
         <a-layout style="min-height: 100vh">
-            <a-layout-sider v-model:collapsed="collapsed" collapsible>
+            <a-layout-sider v-model:collapsed="collapsed" collapsible class="sider">
                 <div class="logo">MechBox</div>
-                <a-menu
-                    v-model:selectedKeys="selectedKeys"
-                    theme="dark"
-                    mode="inline"
-                >
-                    <template v-for="item in menuItems" :key="item.key">
-                        <a-menu-divider v-if="item.type === 'divider'" />
-                        <a-menu-item v-else :key="item.key">
-                            <template #icon>
-                                <component :is="item.icon" />
-                            </template>
+                <!-- Upper scrollable area: business sub-menus -->
+                <div class="menu-scroll">
+                    <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
+                        <a-sub-menu v-for="group in menuGroups" :key="group.key">
+                            <template #icon><component :is="group.icon" /></template>
+                            <template #title>{{ group.title }}</template>
+                            <a-menu-item v-for="item in group.children" :key="item.key">
+                                <template #icon><component :is="item.icon" /></template>
+                                <span>{{ item.label }}</span>
+                            </a-menu-item>
+                        </a-sub-menu>
+                    </a-menu>
+                </div>
+                <!-- Bottom-pinned system items -->
+                <div class="system-bar">
+                    <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" :selectable="false">
+                        <a-menu-item v-for="item in systemItems" :key="item.key">
+                            <template #icon><component :is="item.icon" /></template>
                             <span>{{ item.label }}</span>
                         </a-menu-item>
-                    </template>
-                </a-menu>
+                    </a-menu>
+                </div>
             </a-layout-sider>
             <a-layout>
                 <a-layout-header
@@ -249,5 +294,36 @@ onUnmounted(() => {
     line-height: 32px;
     color: white;
     font-weight: bold;
+}
+
+/* Section 4.3.3: Split layout - scrollable menu + pinned system bar */
+.sider {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.menu-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.menu-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.menu-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.system-bar {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.system-bar :deep(.ant-menu-item) {
+    margin: 0;
 }
 </style>
