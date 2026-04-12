@@ -4,12 +4,19 @@
  */
 import { ref, computed } from 'vue'
 import { calcShaftStrength } from '@renderer/engine/shafts/strength'
+import { calcShaftFatigue, ShaftFatigueParams } from '@renderer/engine/shafts/fatigue'
 import { FilePdfOutlined } from '@ant-design/icons-vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
-const params = ref({ diameter: 30, length: 200, bendingMoment: 50000, torque: 30000, axialForce: 0, materialYield: 355, supportType: 'simply' as const })
+const params = ref({ 
+  diameter: 30, length: 200, bendingMoment: 50000, torque: 30000, axialForce: 0, materialYield: 355, supportType: 'simply' as const 
+})
+const fatigueParams = ref<ShaftFatigueParams>({
+  alternatingStress: 100, meanStress: 50, enduranceLimit: 200, yieldStrength: 355, ultimateStrength: 500, criterion: 'goodman'
+})
 const result = computed(() => calcShaftStrength(params.value))
+const fatigueResult = computed(() => calcShaftFatigue(fatigueParams.value))
 
 async function exportPDF() {
   const el = document.querySelector('.shafts-page') as HTMLElement
@@ -51,11 +58,24 @@ async function exportPDF() {
                   <a-select-option value="fixed">固支梁</a-select-option>
                 </a-select>
               </a-form-item>
+              <a-divider>疲劳强度准则 (Section 10.5)</a-divider>
+              <a-row :gutter="8">
+                <a-col :span="12"><a-form-item label="交变应力 σ_a (MPa)"><a-input-number v-model:value="fatigueParams.alternatingStress" :min="0" style="width:100%"/></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="平均应力 σ_m (MPa)"><a-input-number v-model:value="fatigueParams.meanStress" :min="0" style="width:100%"/></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="疲劳极限 S_e (MPa)"><a-input-number v-model:value="fatigueParams.enduranceLimit" :min="0" style="width:100%"/></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="抗拉强度 S_u (MPa)"><a-input-number v-model:value="fatigueParams.ultimateStrength" :min="0" style="width:100%"/></a-form-item></a-col>
+                <a-col :span="24"><a-form-item label="计算准则">
+                  <a-radio-group v-model:value="fatigueParams.criterion">
+                    <a-radio value="goodman">Goodman (标准)</a-radio>
+                    <a-radio value="soderberg">Soderberg (保守)</a-radio>
+                  </a-radio-group>
+                </a-form-item></a-col>
+              </a-row>
             </a-form>
           </a-card>
         </a-col>
         <a-col :span="14">
-          <a-card title="校核结果" size="small">
+          <a-card title="静强度校核" size="small">
             <a-descriptions bordered size="small" :column="2">
               <a-descriptions-item label="弯曲应力">{{ result.value.bendingStress.toFixed(1) }} MPa</a-descriptions-item>
               <a-descriptions-item label="扭转应力">{{ result.value.torsionalStress.toFixed(1) }} MPa</a-descriptions-item>
@@ -69,12 +89,27 @@ async function exportPDF() {
               <a-descriptions-item label="临界转速">{{ result.value.criticalSpeed.toFixed(0) }} rpm</a-descriptions-item>
             </a-descriptions>
             <a-alert v-for="(w,i) in result.value.warnings" :key="i" :message="w.message" :type="w.level==='error'?'error':w.level==='warning'?'warning':'info'" show-icon style="margin-top:12px"/>
+          </a-card>
+
+          <a-card title="疲劳强度校核 ({{ fatigueResult.criterion }})" size="small" style="margin-top:16px">
+            <a-descriptions bordered size="small" :column="2">
+              <a-descriptions-item label="疲劳安全系数 n">
+                <a-tag :color="fatigueResult.fatigueSafetyFactor >= 2.5 ? 'green' : fatigueResult.fatigueSafetyFactor >= 1.5 ? 'orange' : 'red'">
+                  {{ fatigueResult.fatigueSafetyFactor.toFixed(2) }}
+                </a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="静态屈服安全系数">
+                <a-tag :color="fatigueResult.staticYieldSF >= 1.5 ? 'green' : 'red'">
+                  {{ fatigueResult.staticYieldSF.toFixed(2) }}
+                </a-tag>
+              </a-descriptions-item>
+            </a-descriptions>
+            <a-alert v-for="(w,i) in fatigueResult.warnings" :key="i" :message="w.message" :description="w.suggestion" :type="w.level==='error'?'error':w.level==='warning'?'warning':'info'" show-icon style="margin-top:12px"/>
             <div style="margin-top:16px;padding:12px;background:#f0f7ff;border-radius:4px">
-              <strong>校核公式：</strong>
-              <div>σ_b = M_b / W (W = πd³/32)</div>
-              <div>τ = T / Wt (Wt = πd³/16)</div>
+              <strong>校核公式 ({{ fatigueResult.criterion }})：</strong>
+              <div v-if="fatigueParams.criterion === 'goodman'">σ_a/S_e + σ_m/S_u = 1/n</div>
+              <div v-else>σ_a/S_e + σ_m/S_y = 1/n</div>
               <div>σ_eq = √(σ² + 3τ²) ≤ σ_s / S</div>
-              <div>S = σ_s / σ_eq ≥ 1.5~2.0</div>
             </div>
           </a-card>
         </a-col>

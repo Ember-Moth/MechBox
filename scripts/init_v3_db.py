@@ -632,6 +632,248 @@ def import_jis_b2401_orings(conn: sqlite3.Connection):
     )
 
 
+def import_oring_materials(conn: sqlite3.Connection):
+    materials = [
+        (
+            "oring_mat_nbr_70",
+            "NBR",
+            "Nitrile (Buna-N)",
+            70,
+            -40,
+            125,
+            "excellent",
+            None,
+            "Apple Rubber public guide: general-purpose oil resistant elastomer.",
+        ),
+        (
+            "oring_mat_fkm_75",
+            "FKM",
+            "Fluorocarbon (Viton)",
+            75,
+            -25,
+            230,
+            "excellent",
+            None,
+            "Apple Rubber public guide: high temperature and petroleum fluid resistance.",
+        ),
+        (
+            "oring_mat_epdm_70",
+            "EPDM",
+            "Ethylene-Propylene",
+            70,
+            -40,
+            135,
+            "poor",
+            "excellent",
+            "Apple Rubber public guide: preferred for hot water, steam, weather and ozone exposure.",
+        ),
+        (
+            "oring_mat_vmq_70",
+            "VMQ",
+            "Silicone",
+            70,
+            -55,
+            200,
+            "fair",
+            None,
+            "Apple Rubber public guide: broad low/high temperature range and good dry heat resistance.",
+        ),
+        (
+            "oring_mat_fvmq_70",
+            "FVMQ",
+            "Fluorosilicone",
+            70,
+            -65,
+            177,
+            "good",
+            None,
+            "Apple Rubber public guide: improved fuel and petroleum fluid resistance versus silicone.",
+        ),
+        (
+            "oring_mat_cr_70",
+            "CR",
+            "Chloroprene (Neoprene)",
+            70,
+            -40,
+            100,
+            "fair",
+            None,
+            "Apple Rubber public guide: moderate petroleum resistance and good ozone/weather resistance.",
+        ),
+        (
+            "oring_mat_hnbr_70",
+            "HNBR",
+            "Hydrogenated Nitrile",
+            70,
+            -34,
+            149,
+            "excellent",
+            None,
+            "Apple Rubber HNBR guide: improved heat, oil and ozone resistance compared with NBR.",
+        ),
+        (
+            "oring_mat_ffkm_75",
+            "FFKM",
+            "Perfluoroelastomer",
+            75,
+            -25,
+            316,
+            "excellent",
+            None,
+            "Apple Rubber FFKM guide: exceptional chemical resistance and very high temperature capability.",
+        ),
+    ]
+
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO seal_oring_material
+        (oring_material_id, material_code, material_name, hardness_shore_a, temperature_min_c, temperature_max_c,
+         oil_resistance_rating, water_resistance_rating, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        materials,
+    )
+    conn.execute(
+        """
+        UPDATE dataset_release
+        SET row_count = ?
+        WHERE dataset_id = 'dataset_oring_material_apple'
+        """,
+        (len(materials),),
+    )
+
+
+def import_oring_design_rules(conn: sqlite3.Connection):
+    tables = [
+        (
+            "rule_oring_squeeze_pct",
+            "oring_squeeze_pct",
+            "O-Ring Recommended Squeeze",
+            "Squeeze percentage recommendations summarized from Marco public design guide.",
+        ),
+        (
+            "rule_oring_stretch_pct",
+            "oring_stretch_pct",
+            "O-Ring Installed Stretch",
+            "Installed stretch recommendations summarized from Marco public design guide.",
+        ),
+        (
+            "rule_oring_gland_fill_pct",
+            "oring_gland_fill_pct",
+            "O-Ring Gland Fill",
+            "Nominal gland fill and void-space guidance summarized from Marco public design guide.",
+        ),
+        (
+            "rule_oring_surface_finish",
+            "oring_surface_finish_ra",
+            "O-Ring Surface Finish",
+            "Surface finish guidance summarized from Marco public design guide.",
+        ),
+    ]
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_table
+        (rule_table_id, rule_code, rule_name, domain_code, dataset_id, notes)
+        VALUES (?, ?, ?, 'seal', 'dataset_oring_rules_marco', ?)
+        """,
+        tables,
+    )
+
+    rows = [
+        ("rule_oring_squeeze_pct_face", "rule_oring_squeeze_pct", "face", "Face Seal", 1),
+        ("rule_oring_squeeze_pct_static", "rule_oring_squeeze_pct", "static_male_female", "Static Male/Female", 2),
+        ("rule_oring_squeeze_pct_recip", "rule_oring_squeeze_pct", "reciprocating", "Reciprocating", 3),
+        ("rule_oring_squeeze_pct_rotary", "rule_oring_squeeze_pct", "rotary", "Rotary", 4),
+        ("rule_oring_stretch_pct_general", "rule_oring_stretch_pct", "general", "General Stretch", 1),
+        ("rule_oring_gland_fill_pct_standard", "rule_oring_gland_fill_pct", "standard", "Standard Application", 1),
+        ("rule_oring_surface_finish_static_gas", "rule_oring_surface_finish", "static_gas", "Static Gas", 1),
+        ("rule_oring_surface_finish_static_liquid", "rule_oring_surface_finish", "static_liquid", "Static Liquid", 2),
+        ("rule_oring_surface_finish_dynamic", "rule_oring_surface_finish", "dynamic", "Dynamic", 3),
+    ]
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_row
+        (rule_row_id, rule_table_id, row_key, row_label, sort_order)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        rows,
+    )
+
+    numeric_values = [
+        ("rule_oring_squeeze_pct_face", "min_pct", 20, "pct"),
+        ("rule_oring_squeeze_pct_face", "max_pct", 30, "pct"),
+        ("rule_oring_squeeze_pct_static", "min_pct", 18, "pct"),
+        ("rule_oring_squeeze_pct_static", "max_pct", 25, "pct"),
+        ("rule_oring_squeeze_pct_recip", "min_pct", 10, "pct"),
+        ("rule_oring_squeeze_pct_recip", "max_pct", 20, "pct"),
+        ("rule_oring_squeeze_pct_rotary", "min_pct", 0, "pct"),
+        ("rule_oring_squeeze_pct_rotary", "max_pct", 10, "pct"),
+        ("rule_oring_stretch_pct_general", "min_pct", 0, "pct"),
+        ("rule_oring_stretch_pct_general", "max_pct", 5, "pct"),
+        ("rule_oring_gland_fill_pct_standard", "nominal_fill_pct", 75, "pct"),
+        ("rule_oring_gland_fill_pct_standard", "nominal_void_pct", 25, "pct"),
+        ("rule_oring_surface_finish_static_gas", "min_ra_uin", 16, "uin"),
+        ("rule_oring_surface_finish_static_gas", "max_ra_uin", 16, "uin"),
+        ("rule_oring_surface_finish_static_liquid", "min_ra_uin", 32, "uin"),
+        ("rule_oring_surface_finish_static_liquid", "max_ra_uin", 32, "uin"),
+        ("rule_oring_surface_finish_dynamic", "min_ra_uin", 8, "uin"),
+        ("rule_oring_surface_finish_dynamic", "max_ra_uin", 16, "uin"),
+        ("rule_oring_surface_finish_dynamic", "max_pressure_without_backup_psi", 1500, "psi"),
+    ]
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_value_numeric
+        (rule_row_id, column_code, numeric_value, unit_code)
+        VALUES (?, ?, ?, ?)
+        """,
+        numeric_values,
+    )
+
+    text_values = [
+        (
+            "rule_oring_stretch_pct_general",
+            "note",
+            "General rule 0-5%; cross section reduction due to stretch is about half of ID stretch.",
+        ),
+        (
+            "rule_oring_gland_fill_pct_standard",
+            "note",
+            "Leave void space for swell, thermal expansion and width growth due to squeeze.",
+        ),
+        (
+            "rule_oring_surface_finish_static_gas",
+            "note",
+            "Marco recommends finer finish for gas sealing.",
+        ),
+        (
+            "rule_oring_surface_finish_static_liquid",
+            "note",
+            "Marco allows rougher finish for liquid static sealing.",
+        ),
+        (
+            "rule_oring_surface_finish_dynamic",
+            "note",
+            "Dynamic surfaces should stay smoother; use backup rings or harder materials at higher pressure.",
+        ),
+    ]
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO rule_value_text
+        (rule_row_id, column_code, text_value)
+        VALUES (?, ?, ?)
+        """,
+        text_values,
+    )
+    conn.execute(
+        """
+        UPDATE dataset_release
+        SET row_count = ?
+        WHERE dataset_id = 'dataset_oring_rules_marco'
+        """,
+        (len(rows),),
+    )
+
+
 def import_materials(conn: sqlite3.Connection):
     data = load_json(REPO_ROOT / "data" / "materials-extended.json")
     for family, materials in data.items():
@@ -866,6 +1108,13 @@ def rebuild_search(conn: sqlite3.Connection):
                'oring seal'
         FROM seal_oring_size
         UNION ALL
+        SELECT 'seal_oring_material', oring_material_id, material_code,
+               printf('O-ring material %s %s ShoreA %d temp %.0f to %.0f C',
+                      material_code, material_name, COALESCE(hardness_shore_a, 0),
+                      COALESCE(temperature_min_c, 0), COALESCE(temperature_max_c, 0)),
+               'oring material seal'
+        FROM seal_oring_material
+        UNION ALL
         SELECT 'bearing_basic', bearing_id, designation,
                printf('Bearing %s %.3fx%.3fx%.3f', designation, inner_diameter, outer_diameter, width),
                'bearing'
@@ -885,6 +1134,11 @@ def rebuild_search(conn: sqlite3.Connection):
                printf('Plain washer %s %.3fx%.3fx%.3f', designation, nominal_d, inner_diameter, outer_diameter),
                'washer fastener'
         FROM fastener_plain_washer
+        UNION ALL
+        SELECT 'rule_table', rule_table_id, rule_name,
+               COALESCE(notes, rule_code),
+               domain_code || ' rule'
+        FROM rule_table
         UNION ALL
         SELECT 'vendor_part', vendor_part_id, vendor_part_number,
                COALESCE(description, vendor_part_number),
@@ -915,6 +1169,8 @@ def seed_data_version(conn: sqlite3.Connection):
     rows = [
         ("V3_SCHEMA", "3.0.0", "system", "schema_v3"),
         ("JIS_B2401_GMORS", "2026-04-12", "gmors_catalog", "rows:419"),
+        ("ORING_MATERIAL_APPLE", "2026-04-12", "apple_rubber", "rows:8"),
+        ("ORING_RULES_MARCO", "2026-04-12", "marco_sealing", "rows:9"),
         ("KHK_VENDOR", "2026-04-12", "khk_gear_world", f"urls:{len(KHK_URLS)}"),
         ("NSK_PUBLIC_PDF", "2026-04-12", "nsk_catalog", "rows:54"),
         ("FERROBEND_FASTENER", "2026-04-12", "ferrobend_iso", "iso4032+4034+7089+7090+7091+7093+boltport4035+boltport7092"),
@@ -963,6 +1219,8 @@ def main():
     import_nsk_catalog_bearings(conn)
     import_orings(conn)
     import_jis_b2401_orings(conn)
+    import_oring_materials(conn)
+    import_oring_design_rules(conn)
     import_materials(conn)
     import_seed_gear_modules(conn)
     import_khk_vendor_parts(conn)

@@ -18,8 +18,10 @@ INSERT OR IGNORE INTO source_provider (
   ('asme', 'ASME Standards', 'purchased_standard', 'https://www.asme.org/', 5, 'B18 系列标准'),
   ('agma', 'AGMA Standards', 'purchased_standard', 'https://www.agma.org/standards-technology/', 5, '齿轮标准'),
   ('abma', 'ABMA Standards', 'purchased_standard', 'https://americanbearings.org/industry-standards/', 5, '轴承标准'),
+  ('apple_rubber', 'Apple Rubber', 'vendor_catalog', 'https://www.applerubber.com/', 4, '公开 O-Ring 材料资料'),
   ('gmors_catalog', 'GMORS Catalog', 'vendor_catalog', 'https://www.gmors.com/', 4, '公开 O-Ring 标准尺寸 PDF'),
   ('khk_gear_world', 'KHK Gear World', 'vendor_catalog', 'https://www.khkgears.us/', 4, '齿轮商品目录'),
+  ('marco_sealing', 'Marco Sealing Solutions', 'vendor_catalog', 'https://www.marcorubber.com/', 4, '公开 O-Ring 设计规则资料'),
   ('nsk_catalog', 'NSK Catalogs and CAD', 'vendor_catalog', 'https://www.nsk.com/catalogs-and-cad/', 4, '轴承商品目录'),
   ('boltport', 'Boltport Fasteners', 'reference_db', 'https://boltport.com/standards/', 3, '公开紧固件尺寸参考页'),
   ('ferrobend_iso', 'FERROBEND ISO Fasteners', 'reference_db', 'https://iso-fasteners.com/', 3, '公开标准尺寸参考页'),
@@ -76,6 +78,8 @@ INSERT OR IGNORE INTO dataset_release (
   dataset_id, dataset_name, dataset_version, source_id, revision_id, checksum, row_count, notes
 ) VALUES
   ('dataset_threads_iso_metric_json', 'ISO Metric Threads JSON', '1.0.0', 'iso', 'rev_iso_261_default', NULL, NULL, '仓库内置 JSON'),
+  ('dataset_oring_material_apple', 'O-Ring Material Apple', '2026-04-12', 'apple_rubber', NULL, NULL, NULL, '公开网页整理'),
+  ('dataset_oring_rules_marco', 'O-Ring Design Rules Marco', '2026-04-12', 'marco_sealing', NULL, NULL, NULL, '公开网页整理'),
   ('dataset_jis_b2401_gmors_pdf', 'JIS B 2401 GMORS PDF', '2026-04-12', 'gmors_catalog', 'rev_jis_b_2401_gmors', NULL, NULL, '公开 PDF 抽取'),
   ('dataset_iso_4032_ferrobend', 'ISO 4032 FERROBEND', '2026-04-12', 'ferrobend_iso', 'rev_iso_4032_ferrobend', NULL, NULL, '公开网页抽取'),
   ('dataset_iso_4034_ferrobend', 'ISO 4034 FERROBEND', '2026-04-12', 'ferrobend_iso', 'rev_iso_4034_ferrobend', NULL, NULL, '公开网页抽取'),

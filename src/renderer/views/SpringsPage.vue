@@ -4,12 +4,29 @@
  */
 import { ref, computed } from 'vue'
 import { calcCompressionSpring, getSpringColorGrade } from '@renderer/engine/springs/compression'
+import { calcSpringBuckling } from '@renderer/engine/springs/buckling'
 import { FilePdfOutlined } from '@ant-design/icons-vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
-const params = ref({ wireDiameter: 2, meanDiameter: 16, activeCoils: 10, shearModulus: 79000, load: 50 })
+const params = ref({ 
+  wireDiameter: 2, 
+  meanDiameter: 16, 
+  activeCoils: 10, 
+  shearModulus: 79000, 
+  load: 50,
+  freeLength: 100,
+  endCondition: 'hinged-hinged' as 'fixed-fixed' | 'fixed-hinged' | 'hinged-hinged' | 'fixed-free'
+})
+
 const result = computed(() => calcCompressionSpring(params.value))
+const bucklingResult = computed(() => calcSpringBuckling({
+  freeLength: params.value.freeLength,
+  meanDiameter: params.value.meanDiameter,
+  endCondition: params.value.endCondition,
+  workingDeflection: result.value.deflection
+}))
+
 async function exportPDF() {
   const el = document.querySelector('.springs-page') as HTMLElement
   if (!el) return
@@ -36,6 +53,16 @@ async function exportPDF() {
               <a-form-item label="有效圈数 n"><a-input-number v-model:value="params.activeCoils" :min="1" :step="0.5" style="width:100%"/></a-form-item>
               <a-form-item label="剪切模量 G (MPa)"><a-input-number v-model:value="params.shearModulus" style="width:100%"/><div style="font-size:11px;color:#888">钢 ≈ 79000</div></a-form-item>
               <a-form-item label="工作载荷 F (N)"><a-input-number v-model:value="params.load" :min="0" style="width:100%"/></a-form-item>
+              <a-divider>失稳校核 (Section 10.5)</a-divider>
+              <a-form-item label="自由长度 L0 (mm)"><a-input-number v-model:value="params.freeLength" :min="10" style="width:100%"/></a-form-item>
+              <a-form-item label="端部约束">
+                <a-select v-model:value="params.endCondition" style="width:100%">
+                  <a-select-option value="fixed-fixed">两端固定</a-select-option>
+                  <a-select-option value="fixed-hinged">一端固定一端铰接</a-select-option>
+                  <a-select-option value="hinged-hinged">两端铰接</a-select-option>
+                  <a-select-option value="fixed-free">一端固定一端自由</a-select-option>
+                </a-select>
+              </a-form-item>
             </a-form>
           </a-card>
         </a-col>
@@ -52,12 +79,25 @@ async function exportPDF() {
               <a-descriptions-item label="载荷等级">{{ getSpringColorGrade(result.value.springRate, result.value.deflection) }}</a-descriptions-item>
             </a-descriptions>
             <a-alert v-for="(w,i) in result.value.warnings" :key="i" :message="w.message" :type="w.level==='error'?'error':w.level==='warning'?'warning':'info'" show-icon style="margin-top:12px"/>
+            
+            <a-divider>失稳校核结果 (Haringx 理论)</a-divider>
+            <a-descriptions bordered size="small" :column="2">
+              <a-descriptions-item label="临界长度 Lcr">
+                <a-tag :color="bucklingResult.safetyFactor >= 1.5 ? 'green' : 'red'">{{ bucklingResult.criticalLength.toFixed(1) }} mm</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="失稳安全系数">
+                <a-tag :color="bucklingResult.safetyFactor >= 1.5 ? 'green' : bucklingResult.safetyFactor >= 1.0 ? 'orange' : 'red'">{{ bucklingResult.safetyFactor.toFixed(2) }}</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="允许最大压缩量">{{ bucklingResult.maxDeflection.toFixed(2) }} mm</a-descriptions-item>
+            </a-descriptions>
+            <a-alert v-for="(w,i) in bucklingResult.warnings" :key="i" :message="w.message" :description="w.suggestion" :type="w.level==='error'?'error':'warning'" show-icon style="margin-top:12px"/>
+            
             <div style="margin-top:16px;padding:12px;background:#f0f7ff;border-radius:4px">
               <strong>计算公式：</strong>
               <div>k = Gd⁴ / (8D³n)</div>
               <div>δ = F / k</div>
               <div>τ = 8FDK / (πd³)</div>
-              <div>K = (4C-1)/(4C-4) + 0.615/C (Wahl)</div>
+              <div>Lcr ≈ 2.63 * D / μ (Haringx)</div>
             </div>
           </a-card>
         </a-col>

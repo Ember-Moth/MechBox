@@ -1,113 +1,72 @@
-# 🛠️ MechBox (MechCalc) - 工业级机械设计辅助与演算平台
+# 🛠️ MechBox (MechCalc)
+### 工业级机械设计辅助与演算平台 —— 断网环境下绝对可靠的离线桌面指挥中心
 
-[![Electron](https://img.shields.io/badge/Electron-30.x-blue?logo=electron)](https://www.electronjs.org/)
-[![Vue](https://img.shields.io/badge/Vue-3.x-4fc08d?logo=vuedotjs)](https://vuejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript)](https://www.typescriptlang.org/)
-[![SQLite](https://img.shields.io/badge/SQLite-3.x-003B57?logo=sqlite)](https://www.sqlite.org/)
-[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
-
-> **"告别 Excel 与散落的手册，打造断网环境下绝对可靠的离线桌面指挥中心。"**
-
-MechBox 是一款专为机械工程师、工艺工程师及非标自动化设计人员打造的桌面端工程辅助平台。我们致力于将复杂的计算逻辑、海量的行业标准、约束求解算法与直观的现代可视化界面深度集成，提供从定性估算到图纸落地的全生命周期支持。
+[![Electron](https://img.shields.io/badge/Electron-30.x-blue?style=flat-square&logo=electron)](https://www.electronjs.org/)
+[![Vue](https://img.shields.io/badge/Vue-3.x-4fc08d?style=flat-square&logo=vuedotjs)](https://vuejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Rust](https://img.shields.io/badge/Core-Rust--Inside-orange?style=flat-square&logo=rust)](https://www.rust-lang.org/)
+[![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?style=flat-square&logo=sqlite)](https://www.sqlite.org/)
+[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=flat-square)](LICENSE)
 
 ---
 
-## 🌟 核心破局点 (Why MechBox?)
+> **"让每一位机械工程师都能在极端的保密环境与复杂的工况下，快速、严谨地完成从定性选型到图纸落地的全过程。"**
 
-在机械设计过程中，数据分散、单向正算、标准错位是导致设计缺陷的主要原因。MechBox 针对性地提供了以下“重火力”解决方案：
-
-*   **100% 离线安全**：没有云端，没有订阅。所有核心计算与海量标准库（SQLite）完全本地化，确保在车间、保密军工企业等无网络环境下依然秒级响应，绝不泄露一张图纸。
-*   **逆向约束求解 (Solver Engine)**：不再是传统的“输入参数算结果”。内置牛顿迭代法、二分法与离散优化器，支持带约束条件的反向寻优（如：空间受限下自动推荐最优轴承与螺栓）。
-*   **海量本地数据库**：接入 `better-sqlite3`，摒弃低效 JSON。支持 GB/ISO/DIN/JIS/ASME 全量标准件尺寸查询，并预留企业非标件与特殊材料库扩展接口。
-*   **跨软件宏联动**：一键将计算得出的沟槽、齿轮方程或装配建议导出为 SolidWorks VBA 宏、FreeCAD Python 脚本或 STEP 占位模型。
-*   **白盒化工程产出**：不仅输出最终数值，更在界面上清晰展示计算过程与引用标准（如 ISO 281），支持一键导出专业级 PDF 计算书用于 ISO 9001 设计评审。
+**MechBox** 是一款深度集成机械设计逻辑、多国行业标准与约束求解算法的桌面端重型辅助平台。它不仅是散乱 Excel 表格的终结者，更是连接工程理论与生产实际的数字桥梁。
 
 ---
 
-## 🚀 已落地核心模块 (v1.0)
+## 💎 核心破局点 (Why MechBox?)
 
-### ⭕ 密封设计 (Seals)
-*   **双向寻优**：从 O 型圈选型推荐沟槽尺寸，或根据已有沟槽逆向匹配符合 AS568/GB3452 标准的密封圈。
-*   **多维安全校核**：实时计算压缩率、拉伸率、填充率，并针对静/动密封给出预警。
+在工业软件领域，我们坚持“计算回归底层，数据坚守本地”：
 
-### 🔵 轴承工具 (Bearings)
-*   **寿命与载荷**：基于当量动载荷计算 ISO 281 的 L10 额定寿命。
-*   **配合与游隙补偿**：计算由过盈压装引起的初始游隙减少量，以及工作温升引起的热膨胀补偿。
-*   **求解器选型**：输入预期寿命与径向空间限制，Solver 引擎自动从数据库筛选最优型号。
-
-### 📏 公差配合 (Tolerances)
-*   **极值查询**：基于 ISO 286，输入 `25H7/g6` 即得微米级极限偏差。
-*   **性质判定**：自动分析间隙、过渡或过盈状态，并给出装配工艺推荐。
-
-### ⚙️ CAD 导出引擎 (CAD Export)
-*   自动生成 SolidWorks 沟槽宏 (`.swp`) 与 FreeCAD 脚本 (`.py`)。
-*   自动生成齿轮参数方程，辅助 3D 模型特征驱动。
+*   **🛡️ 100% 离线主权**：零云端依赖，数据不离机。直击军工、核心研发单位的保密红线，确保在无网车间依然拥有秒级的响应体验。
+*   **🧠 逆向约束求解 (Solver Engine)**：超越传统的“正向代公式”。内置牛顿-拉夫逊、二分法及离散优化算法，支持给定目标（如：轴径受限、寿命要求）反向寻优最优零部件。
+*   **📖 黑盒计算，白盒呈现**：底层采用严谨的 Rust/TS 核心解算，前端通过 LaTeX 优雅渲染公式推导全过程。每一行数值，皆有标准可依，每一份报告，皆可用于 ISO 评审。
+*   **🔗 跨软件宏联动**：打通 CAD 数据孤岛。一键将计算结果推送到 SolidWorks VBA 宏或 FreeCAD 脚本中，实现 3D 特征的“Live Rebuild”。
 
 ---
 
-## 🏗️ 架构设计 (混合高性能)
+## 🚀 功能矩阵 (v1.0 现已就绪)
 
-项目目前采用 **Electron + Vue 3 + TypeScript + SQLite** 的现代化桌面架构：
+### ⚙️ 核心设计模块
+*   **密封系统 (Seals)**：基于 Lindley 方程的接触应力预估，涵盖 O 型圈正/反向设计与热膨胀校核。
+*   **轴承动力学 (Bearings)**：全面实现 ISO 281:2007 修正额定寿命计算，引入润滑比 ($\kappa$) 与污染系数 ($e_C$) 修正。
+*   **螺栓连接 (Bolts)**：遵循 VDI 2230 系统化协议，涵盖载荷分配系数 $\Phi$、预紧力损失及疲劳极限校验。
+*   **传动选型 (Drives)**：集成带传动、链传动及渐开线齿轮 (ISO 6336) 的几何与强度解算。
 
-*   **UI 渲染层 (Vue 3 + Ant Design)**：负责高密度的工业控制台级交互与 ECharts 实时图表反馈。
-*   **计算引擎 (`src/renderer/engine`)**：基于纯 TypeScript 实现的纯函数与 Solver 约束求解层，高度解耦，易于实现 100% 测试覆盖。
-*   **本地数据中心 (`better-sqlite3`)**：在 Electron 主进程中运行，提供极速的 SQL 标准查询与自定义物料表（`user_standards`）管理。
-
----
-
-## 🗺️ 宏伟演进路线 (v2.0 & v3.0 Roadmap)
-
-我们正朝着“工业级本地瑞士军刀”迈进，接下来的重火力演进计划（详见 [DOC/CRITIQUE_AND_IMPROVEMENT.md](./DOC/CRITIQUE_AND_IMPROVEMENT.md)）：
-
-*   🚀 **系统级耦合计算**：从单零件计算升级为 1D-FEM 轴系传动耦合求解。
-*   🦀 **Rust 核心性能榨取**：通过 `napi-rs` 将矩阵运算、蒙特卡洛 (Monte Carlo) 公差概率模拟下沉至 Rust，实现本地算力的极致压榨。
-*   🔌 **原生 CAD 插件双向联动**：研发 SolidWorks/Inventor 原生插件，通过本地 WebSocket 与 MechBox 实现参数双向捕捉与实时驱动 (Live Rebuild)。
-*   🧊 **本地 WebGL 数字孪生**：利用 Three.js 进行纯本地 3D 参数化几何生成，不打开 CAD 即可在界面上进行干涉与碰撞高亮预警。
-*   📊 **多参数扫描 (DOE) 与 PLM Lite**：提供 3D 敏感度云图分析，并加入本地方案版本管理与一键 BOM 导出。
+### 📚 工程中枢与工具
+*   **多国标准互查**：覆盖 GB/ISO/DIN/JIS/ASME 标准件库，支持材料牌号的跨国等效代换。
+*   **逆向识别向导**：只需输入现场实测的外形残余数据，AI 算法自动反推标准规格。
+*   **DFM 成本预估**：在公差选择阶段即刻映射加工工艺，预警高成本过精密加工风险。
 
 ---
 
-## 📦 快速开始
+## 🏗️ 技术架构 (High-Performance Stack)
 
-### 1. 克隆仓库
-```bash
-git clone https://github.com/your-username/MechBox.git
-cd MechBox
-```
-
-### 2. 安装依赖 (推荐使用 pnpm)
-```bash
-pnpm install
-```
-
-### 3. 开发环境运行
-```bash
-pnpm dev
-```
-
-### 4. 构建独立安装包 (Win/Mac/Linux)
-```bash
-pnpm build
-```
+*   **GUI 层**：基于 **Vue 3 (Composition API)** + **Ant Design Vue** 构建的高密度工业控制台。
+*   **引擎层**：由 **TypeScript Solver** 与 **Rust Core (napi-rs)** 驱动的高密矩阵运算内核。
+*   **数据层**：内嵌 **SQLite (FTS5)** 全文检索引擎，支撑百万级标准规格的毫秒级检索。
+*   **渲染层**：利用 **WebGL (Three.js)** 实现纯本地化的 3D 参数化数字孪生预览。
 
 ---
 
-## 🤝 参与贡献
+## 🗺️ 宏伟愿景 (Future Roadmap)
 
-MechBox 的目标是打破大厂的信息壁垒与高昂订阅费。无论你是机械工程师还是开发者，我们都极度渴望你的加入：
-1. **录入权威数据**：帮助扩充 SQLite 中的 DIN/JIS/ASME 标准件尺寸与非线性材料曲线。
-2. **编写计算核心**：用 TypeScript 或 Rust 贡献你擅长的齿轮、弹簧或流体计算数学模型。
-3. **反馈工程场景**：提交 Issue 告知我们在特定真实工况下的校核盲区。
-
----
-
-## 📄 开源协议
-
-本项目采用 [GNU General Public License v3.0 (GPL-3.0)](LICENSE)。
-允许个人与开源社区免费使用与二次开发。**任何包含或修改了本项目代码的衍生软件（无论是实体分发还是网络服务），必须同样以 GPL-3.0 协议开源其完整源代码**。
-如需将本软件或其核心算法集成于闭源商业软件中，请联系作者获取双重授权。
+*   **v2.0**: **系统级耦合**。引入 1D-FEM，实现“轴-齿轮-轴承”传动链的整体变形与载荷耦合求解。
+*   **v2.5**: **本地 AI Copilot**。集成基于 RAG 的本地专家模型，通过自然语言驱动选型建议。
+*   **v3.0**: **重火力轻量化**。计算核心全面 Rust 化，引入 Monte Carlo 蒙特卡洛公差良率仿真。
 
 ---
 
-**MechBox** —— 由工程师为工程师打造的桌面级核武。  
-*如果您认同我们的理念，请点个 ⭐️ Star 支持！*
+## 📄 开源协议与商业授权
+
+本项目采用 **[GNU General Public License v3.0 (GPL-3.0)](LICENSE)**。
+
+*   **社区版**：免费、开源、允许二次开发，但您的衍生作品必须同样开源。
+*   **双重授权 (Dual Licensing)**：如果您需要在闭源商业软件、私有设备系统或企业内部集成 MechBox 的核心解算内核，请联系作者获取**商业授权 (Commercial License)**。
+
+---
+
+**MechBox** —— 由工程师为工程师打造的“桌面级核武”。  
+*如果您认同我们的愿景，请点击右上方 ⭐️ Star 支持本项目！*
