@@ -7,6 +7,7 @@ import {
     SettingOutlined,
     ToolOutlined,
     StarOutlined,
+    InfoCircleOutlined,
 } from "@ant-design/icons-vue";
 import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
@@ -15,6 +16,7 @@ import SealsPage from "./views/seals/SealsPage.vue";
 import BearingsPage from "./views/bearings/BearingsPage.vue";
 import BoltsPage from "./views/bolts/BoltsPage.vue";
 import FavoritesPage from "./views/FavoritesPage.vue";
+import AboutPage from "./views/AboutPage.vue";
 import { industrialCompactTheme } from "./themes/industrial-compact";
 
 const collapsed = ref(false);
@@ -27,6 +29,7 @@ const menuItems = [
     { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
     { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },
     { key: "favorites", icon: StarOutlined, label: "我的收藏" },
+    { key: "about", icon: InfoCircleOutlined, label: "关于" },
 ];
 
 // Handle navigation events from Dashboard
@@ -99,6 +102,9 @@ onUnmounted(() => {
                         </div>
                         <div v-else-if="selectedKeys[0] === 'favorites'">
                             <FavoritesPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'about'">
+                            <AboutPage />
                         </div>
                         <div v-else>正在构建 {{ selectedKeys[0] }} 模块...</div>
                     </div>
