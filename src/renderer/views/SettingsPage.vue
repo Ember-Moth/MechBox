@@ -1,31 +1,40 @@
 <script setup lang="ts">
 /**
  * SettingsPage.vue - 企业级系统配置与管控中枢 (Section 9)
+ * 包含: 多语言/主题/单位 + 企业级高级设置
  */
-import { ref, computed } from 'vue'
-import { SaveOutlined, UndoOutlined, LockOutlined, ThunderboltOutlined, FileTextOutlined } from '@ant-design/icons-vue'
+import { ref } from 'vue'
+import { useStandardStore } from '../store/useStandardStore'
+import { SaveOutlined, UndoOutlined, LockOutlined, ThunderboltOutlined, FileTextOutlined, GlobalOutlined, EyeOutlined, SwapOutlined } from '@ant-design/icons-vue'
 import { loadEnterpriseSettings, saveEnterpriseSettings, defaultEnterpriseSettings } from '../engine/enterprise-settings'
 
+const store = useStandardStore()
 const settings = ref(loadEnterpriseSettings())
-const activeTab = ref('solver')
+const activeTab = ref('general')
 
 function saveSettings() {
   saveEnterpriseSettings(settings.value)
-  alert('企业级设置已保存')
+  alert('设置已保存')
 }
 
 function resetToDefaults() {
   if (window.confirm('确定要恢复默认设置吗？')) {
     settings.value = { ...defaultEnterpriseSettings }
     saveEnterpriseSettings(settings.value)
+    // 同步基础设置
+    store.setUnit('mm')
   }
+}
+
+function onUnitChange(unit: 'mm' | 'inch') {
+  store.setUnit(unit)
 }
 </script>
 
 <template>
   <div class="settings-page">
     <div class="toolbar">
-      <div class="brand">MechBox <small>企业级系统配置与管控中枢</small></div>
+      <div class="brand">MechBox <small>系统设置</small></div>
       <a-space>
         <a-button size="small" type="primary" @click="saveSettings"><template #icon><SaveOutlined /></template>保存设置</a-button>
         <a-button size="small" @click="resetToDefaults"><template #icon><UndoOutlined /></template>恢复默认</a-button>
@@ -34,7 +43,40 @@ function resetToDefaults() {
 
     <div class="content-body">
       <a-tabs v-model:activeKey="activeTab">
-        <!-- 9.1 计算引擎与求解器调优 -->
+        <!-- 基础设置: 多语言、主题、单位 -->
+        <a-tab-pane key="general" tab="基础设置">
+          <a-card title="界面与单位" size="small">
+            <a-form layout="vertical">
+              <a-form-item label="语言 (Language)">
+                <a-select v-model:value="settings.language" style="width:100%">
+                  <a-select-option value="zh-CN">简体中文</a-select-option>
+                  <a-select-option value="en-US">English (Coming Soon)</a-select-option>
+                </a-select>
+              </a-form-item>
+
+              <a-form-item label="界面主题">
+                <a-radio-group v-model:value="settings.theme">
+                  <a-radio value="light"><template #icon><EyeOutlined /></template>浅色主题 (默认)</a-radio>
+                  <a-radio value="dark" disabled>深色主题 (开发中)</a-radio>
+                </a-radio-group>
+              </a-form-item>
+
+              <a-form-item label="默认单位制">
+                <a-radio-group :value="store.unit" @change="(e: any) => onUnitChange(e.target.value)">
+                  <a-radio value="mm">公制 (mm)</a-radio>
+                  <a-radio value="inch">英制 (inch)</a-radio>
+                </a-radio-group>
+                <div style="font-size:11px;color:#888;margin-top:4px">切换后所有计算页面将自动换算</div>
+              </a-form-item>
+
+              <a-form-item>
+                <a-checkbox v-model:checked="settings.showWelcomeOnStart">启动时显示工作台</a-checkbox>
+              </a-form-item>
+            </a-form>
+          </a-card>
+        </a-tab-pane>
+
+        <!-- 9.1 求解器与引擎调优 -->
         <a-tab-pane key="solver" tab="求解器调优">
           <a-card title="全局计算参数" size="small">
             <a-form layout="vertical">
@@ -82,7 +124,7 @@ function resetToDefaults() {
                 </a-checkbox>
               </a-form-item>
               <a-divider>企业标准优先级</a-divider>
-              <a-form-item label="标准调用优先级 (拖拽排序)">
+              <a-form-item label="标准调用优先级">
                 <a-select v-model:value="settings.standardPrecedence" mode="tags" style="width:100%" placeholder="高优先级 > 低优先级">
                   <a-select-option value="custom">企业自定义库</a-select-option>
                   <a-select-option value="GB/T">国标 GB/T</a-select-option>
