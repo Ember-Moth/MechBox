@@ -6,8 +6,8 @@ import { ref, computed } from 'vue'
 import { calcShaftStrength } from '@renderer/engine/shafts/strength'
 import { calcShaftFatigue, ShaftFatigueParams } from '@renderer/engine/shafts/fatigue'
 import { FilePdfOutlined } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { usePdfExport } from '../composables/usePdfExport'
+
 
 const params = ref({ 
   diameter: 30, length: 200, bendingMoment: 50000, torque: 30000, axialForce: 0, materialYield: 355, supportType: 'simply' as const 
@@ -18,7 +18,9 @@ const fatigueParams = ref<ShaftFatigueParams>({
 const result = computed(() => calcShaftStrength(params.value))
 const fatigueResult = computed(() => calcShaftFatigue(fatigueParams.value))
 
-async function exportPDF() {
+const { isExporting, exportPdf } = usePdfExport()
+
+async function handleExportPdf() {
   const el = document.querySelector('.shafts-page') as HTMLElement
   if (!el) return
   const c = await html2canvas(el, { scale: 2 })
@@ -32,7 +34,7 @@ async function exportPDF() {
   <div class="shafts-page">
     <div class="toolbar">
       <div class="brand">MechBox <small>轴强度校核</small></div>
-      <a-button size="small" type="primary" @click="exportPDF"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
+      <a-button size="small" type="primary" @click="handleExportPdf"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
     </div>
     <div class="content-body">
       <a-row :gutter="16">

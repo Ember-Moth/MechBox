@@ -6,8 +6,8 @@
  */
 import { ref, computed } from 'vue'
 import { FileTextOutlined, DownloadOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { usePdfExport } from '../composables/usePdfExport'
+
 
 interface ReportRecord {
   id: string

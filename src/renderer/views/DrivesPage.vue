@@ -8,8 +8,8 @@ import { ref, computed } from 'vue'
 import { calcVBel } from '../engine/drives/belt'
 import { calcChainDrive } from '../engine/drives/chain'
 import { FilePdfOutlined, DownloadOutlined } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { usePdfExport } from '../composables/usePdfExport'
+
 
 const driveType = ref<'belt' | 'chain'>('belt')
 
@@ -38,7 +38,9 @@ const chainResult = computed(() => {
   return calcChainDrive(chainParams.value)
 })
 
-async function exportPDF() {
+const { isExporting, exportPdf } = usePdfExport()
+
+async function handleExportPdf() {
   const element = document.querySelector('.drives-page') as HTMLElement
   if (!element) return
   const canvas = await html2canvas(element, { scale: 2 })
@@ -54,7 +56,7 @@ async function exportPDF() {
     <div class="toolbar">
       <div class="brand">MechBox <small>传动工具</small></div>
       <a-space>
-        <a-button size="small" type="primary" @click="exportPDF">
+        <a-button size="small" type="primary" @click="handleExportPdf">
           <template #icon><FilePdfOutlined /></template>导出PDF
         </a-button>
       </a-space>

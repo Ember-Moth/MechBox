@@ -6,8 +6,8 @@ import { ref, computed } from 'vue'
 import { calcCompressionSpring, getSpringColorGrade } from '@renderer/engine/springs/compression'
 import { calcSpringBuckling } from '@renderer/engine/springs/buckling'
 import { FilePdfOutlined } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { usePdfExport } from '../composables/usePdfExport'
+
 
 const params = ref({ 
   wireDiameter: 2, 
@@ -27,7 +27,9 @@ const bucklingResult = computed(() => calcSpringBuckling({
   workingDeflection: result.value.value.deflection
 }))
 
-async function exportPDF() {
+const { isExporting, exportPdf } = usePdfExport()
+
+async function handleExportPdf() {
   const el = document.querySelector('.springs-page') as HTMLElement
   if (!el) return
   const c = await html2canvas(el, { scale: 2 })
@@ -41,7 +43,7 @@ async function exportPDF() {
   <div class="springs-page">
     <div class="toolbar">
       <div class="brand">MechBox <small>弹簧计算</small></div>
-      <a-button size="small" type="primary" @click="exportPDF"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
+      <a-button size="small" type="primary" @click="handleExportPdf"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
     </div>
     <div class="content-body">
       <a-row :gutter="16">

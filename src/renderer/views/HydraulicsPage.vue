@@ -5,8 +5,8 @@
 import { ref, computed } from 'vue'
 import { calcCylinder, standardBoreSizes } from '@renderer/engine/hydraulics/cylinder'
 import { FilePdfOutlined } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { usePdfExport } from '../composables/usePdfExport'
+
 
 const params = ref({ boreDiameter: 50, rodDiameter: 28, pressure: 10, stroke: 300, flowRate: 10 })
 const result = computed(() => calcCylinder(params.value))
@@ -17,7 +17,9 @@ function autoSelectBore() {
   params.value.boreDiameter = standardBoreSizes.find(s => Math.PI*s*s/4 >= area) || 80
 }
 
-async function exportPDF() {
+const { isExporting, exportPdf } = usePdfExport()
+
+async function handleExportPdf() {
   const el = document.querySelector('.hydraulics-page') as HTMLElement
   if (!el) return
   const c = await html2canvas(el, { scale: 2 })
@@ -33,7 +35,7 @@ async function exportPDF() {
       <div class="brand">MechBox <small>液压气动计算</small></div>
       <a-space>
         <a-button size="small" @click="autoSelectBore">自动选型</a-button>
-        <a-button size="small" type="primary" @click="exportPDF"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
+        <a-button size="small" type="primary" @click="handleExportPdf"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
       </a-space>
     </div>
     <div class="content-body">

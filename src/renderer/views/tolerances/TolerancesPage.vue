@@ -8,8 +8,10 @@ import { useStandardStore } from "../../store/useStandardStore";
 import { calcFit } from "../../engine/tolerances/fit";
 import type { FitResult } from "../../engine/types";
 import { FilePdfOutlined } from "@ant-design/icons-vue";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { usePdfExport } from '../../composables/usePdfExport'
+
+;
+;
 
 const store = useStandardStore();
 
@@ -27,7 +29,7 @@ const itGrades = ["IT5", "IT6", "IT7", "IT8", "IT9"];
 // 计算结果
 const fitResult = ref<FitResult | null>(null);
 
-watchEffect(async () => {
+watchEffect(() => {
     if (!size.value || size.value <= 0) {
         fitResult.value = null;
         return;
@@ -39,12 +41,12 @@ watchEffect(async () => {
         return;
     }
 
-    const [holeIT, holeDev, shaftIT, shaftDev] = await Promise.all([
+    const [holeIT, holeDev, shaftIT, shaftDev] = [
         store.getITValue(holeGrade.value, sizeIndex),
         store.getFundamentalDeviation("holes", holePos.value, sizeIndex),
         store.getITValue(shaftGrade.value, sizeIndex),
         store.getFundamentalDeviation("shafts", shaftPos.value, sizeIndex),
-    ]);
+    ];
 
     if (
         holeIT === null ||
@@ -84,7 +86,9 @@ const getFitTypeColor = (type: string) => {
     return map[type] || "blue";
 };
 
-async function exportPDF() {
+const { isExporting, exportPdf } = usePdfExport()
+
+async function handleExportPdf() {
     const el = document.querySelector(".tolerances-page") as HTMLElement;
     if (!el) return;
     const c = await html2canvas(el, { scale: 2 });
@@ -98,7 +102,7 @@ async function exportPDF() {
     <div class="tolerances-page">
         <div class="toolbar">
             <div class="brand">MechBox <small>公差配合</small></div>
-            <a-button size="small" type="primary" @click="exportPDF" :disabled="!fitResult">
+            <a-button size="small" type="primary" @click="handleExportPdf" :disabled="!fitResult">
                 <template #icon><FilePdfOutlined /></template>导出PDF
             </a-button>
         </div>

@@ -5,7 +5,8 @@
  */
 import { ref } from 'vue'
 import { FileTextOutlined, DownloadOutlined } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
+import { usePdfExport } from '../composables/usePdfExport'
+
 
 const reportConfig = ref({
   projectName: '轴承选型计算书',

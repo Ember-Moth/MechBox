@@ -4,9 +4,9 @@ import { calcPreload, calcStress, recommendTorque } from '../../engine/bolts/str
 import { calcVDI2230 } from '../../engine/bolts/vdi2230'
 import { exportBoltAssemblyToSTEP } from '../../engine/cad-export'
 import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, DownloadOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 import { useStandardStore } from '../../store/useStandardStore'
+import { usePdfExport } from '../../composables/usePdfExport'
+
 
 const store = useStandardStore()
 const boltList = ref<any[]>([])
@@ -85,7 +85,9 @@ function extractDiameter(designation: string): number {
   return match ? parseFloat(match[1]) : 0
 }
 
-async function exportPDF() {
+const { isExporting, exportPdf } = usePdfExport()
+
+async function handleExportPdf() {
   const element = document.querySelector('.bolts-page') as HTMLElement
   if (!element) return
 
@@ -163,7 +165,7 @@ function printReport() {
           </template>
           {{ isFavorited ? '已收藏' : '收藏' }}
         </a-button>
-        <a-button size="small" type="primary" @click="exportPDF">
+        <a-button size="small" type="primary" @click="handleExportPdf">
           <template #icon><FilePdfOutlined /></template>创建PDF
         </a-button>
         <a-button size="small" @click="exportCAD">

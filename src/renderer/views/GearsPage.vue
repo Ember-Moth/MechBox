@@ -7,8 +7,8 @@ import { ref, computed } from 'vue'
 import { calcGearGeometry, recommendModule, standardModules } from '@renderer/engine/gears/geometry'
 import { calcGearISO6336 } from '@renderer/engine/gears/iso6336'
 import { FilePdfOutlined } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { usePdfExport } from '../composables/usePdfExport'
+
 
 const params = ref({
   module: 2,
@@ -32,7 +32,9 @@ function recommend() {
   params.value.module = recommendModule(a)
 }
 
-async function exportPDF() {
+const { isExporting, exportPdf } = usePdfExport()
+
+async function handleExportPdf() {
   const el = document.querySelector('.gears-page') as HTMLElement
   if (!el) return
   const canvas = await html2canvas(el, { scale: 2 })
@@ -49,7 +51,7 @@ async function exportPDF() {
       <div class="brand">MechBox <small>齿轮计算</small></div>
       <a-space>
         <a-button size="small" @click="recommend">推荐模数</a-button>
-        <a-button size="small" type="primary" @click="exportPDF"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
+        <a-button size="small" type="primary" @click="handleExportPdf"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
       </a-space>
     </div>
     <div class="content-body">

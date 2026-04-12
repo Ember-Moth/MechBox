@@ -5,13 +5,15 @@
 import { ref, computed } from 'vue'
 import { calcMotorSelection } from '@renderer/engine/motors/selection'
 import { FilePdfOutlined } from '@ant-design/icons-vue'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { usePdfExport } from '../composables/usePdfExport'
+
 
 const params = ref({ loadForce: 10, speed: 1500, inertia: 0.001, acceleration: 100, efficiency: 0.9, safetyFactor: 1.5 })
 const result = computed(() => calcMotorSelection(params.value))
 
-async function exportPDF() {
+const { isExporting, exportPdf } = usePdfExport()
+
+async function handleExportPdf() {
   const el = document.querySelector('.motors-page') as HTMLElement
   if (!el) return
   const c = await html2canvas(el, { scale: 2 })
@@ -25,7 +27,7 @@ async function exportPDF() {
   <div class="motors-page">
     <div class="toolbar">
       <div class="brand">MechBox <small>电机选型</small></div>
-      <a-button size="small" type="primary" @click="exportPDF"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
+      <a-button size="small" type="primary" @click="handleExportPdf"><template #icon><FilePdfOutlined /></template>导出PDF</a-button>
     </div>
     <div class="content-body">
       <a-row :gutter="16">
