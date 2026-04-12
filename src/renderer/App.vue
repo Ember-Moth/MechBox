@@ -400,18 +400,29 @@ watch(
 }
 
 .sider {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
     background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
     box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
 }
 
+/* Force Ant Design sider internal div to respect our height */
+.sider :deep(.ant-layout-sider-children) {
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
 .menu-scroll {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-gutter: stable;
 }
 
 .menu-scroll :deep(.ant-menu-item) {
