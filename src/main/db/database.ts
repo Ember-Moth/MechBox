@@ -5,6 +5,8 @@ import { existsSync, mkdirSync } from "fs";
 import iso286Data from "../../../data/standards/tolerances/iso286.json";
 import as568Data from "../../../data/standards/o-ring/as568.json";
 import deepGrooveData from "../../../data/standards/bearings/deep-groove.json";
+import isoMetricThreadsData from "../../../data/standards/threads/iso-metric.json";
+import hexBoltsData from "../../../data/standards/bolts/hex-bolts.json";
 
 let db: Database.Database;
 
@@ -69,6 +71,35 @@ export function initDatabase() {
     )
   `,
   ).run();
+
+  // 创建 ISO 公制螺纹表
+  db.prepare(
+    `
+    CREATE TABLE IF NOT EXISTS threads_iso_metric (
+      designation TEXT PRIMARY KEY,
+      d REAL,
+      pitch REAL,
+      d2 REAL,
+      d1 REAL,
+      stress_area REAL
+    )
+  `,
+  ).run();
+
+  // 创建六角螺栓表
+  db.prepare(
+    `
+    CREATE TABLE IF NOT EXISTS bolts_hex (
+      designation TEXT PRIMARY KEY,
+      d REAL,
+      head_width_s REAL,
+      head_height_k REAL,
+      standard TEXT
+    )
+  `,
+  ).run();
+
+  // 导入初始数据 (仅当表为空时)
 
   // 导入初始数据 (仅当表为空时)
   const itCount = db
@@ -145,6 +176,49 @@ export function initDatabase() {
       );
     });
     transaction(deepGrooveData);
+  }
+
+  const threadsCount = db
+    .prepare("SELECT count(*) as count FROM threads_iso_metric")
+    .get() as { count: number };
+  if (threadsCount.count === 0) {
+    const insertThread = db.prepare(
+      "INSERT INTO threads_iso_metric (designation, d, pitch, d2, d1, stress_area) VALUES (?, ?, ?, ?, ?, ?)",
+    );
+    const transaction = db.transaction((data) => {
+      data.threads.forEach((t: any) =>
+        insertThread.run(
+          t.designation,
+          t.d,
+          t.pitch,
+          t.d2,
+          t.d1,
+          t.stress_area,
+        ),
+      );
+    });
+    transaction(isoMetricThreadsData);
+  }
+
+  const boltsCount = db
+    .prepare("SELECT count(*) as count FROM bolts_hex")
+    .get() as { count: number };
+  if (boltsCount.count === 0) {
+    const insertBolt = db.prepare(
+      "INSERT INTO bolts_hex (designation, d, head_width_s, head_height_k, standard) VALUES (?, ?, ?, ?, ?)",
+    );
+    const transaction = db.transaction((data) => {
+      data.bolts.forEach((b: any) =>
+        insertBolt.run(
+          b.designation,
+          b.d,
+          b.head_width_s,
+          b.head_height_k,
+          b.standard,
+        ),
+      );
+    });
+    transaction(hexBoltsData);
   }
 
   console.log("Database initialized at:", dbPath);
