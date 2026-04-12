@@ -36,7 +36,10 @@
 | 11.2 | 表单草稿持久化 (防丢失) | ✅ | `src/renderer/store/useFormDraftStore.ts` |
 | 11.4 | ERP/BOM 企业物料编码 | ✅ | `src/renderer/engine/bom-export.ts` |
 | 11.4 | 制造约束检查 (刀具干涉) | ✅ | `src/renderer/engine/seals/multi-physics.ts` |
-| 11.4 | 材料标准命名 (GB/T 引用) | ✅ | `data/materials-extended.json` |
+| 11.4 | 材料标准命名 (GB/T 引用) | ✅ | `src/renderer/views/MaterialLibraryPage.vue` + `data/materials-extended.json` |
+| 4.3.3 | 侧边栏字号增大 + 上下滚动 | ✅ | `src/renderer/App.vue` (CSS) |
+| 11.3 | 实时输入校验 (红框+提示) | ✅ | `BearingsPage.vue`, `BoltsPage.vue` |
+| 11.4 | 热处理状态对性能影响说明 | ✅ | `MaterialLibraryPage.vue` (notes field) |
 
 
 ---
