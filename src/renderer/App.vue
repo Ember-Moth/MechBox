@@ -297,5 +297,12 @@ onUnmounted(() => {
 
 .system-bar :deep(.ant-menu-item) {
     margin: 0;
+    font-size: 13px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+}
+
+.system-bar :deep(.ant-menu-item .anticon) {
+    font-size: 14px !important;
 }
 </style>

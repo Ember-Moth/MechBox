@@ -107,30 +107,32 @@ function registerIpcHandlers() {
     return row ? { ...row, data: JSON.parse(row.data) } : null;
   });
 
-  // FTS5 模糊检索 - 高性能全文搜索 (Section 2.3.1)
-  ipcMain.handle("db-fuzzy-search", (_, table: string, query: string, limit: number = 20) => {
-    const ftsTable = `${table}_fts`;
-    const baseTable = table;
-    
-    // 使用 FTS5 进行高性能模糊检索
-    const sql = `
-      SELECT b.*, rank
-      FROM ${ftsTable} f
-      JOIN ${baseTable} b ON b.rowid = f.rowid
-      WHERE ${ftsTable} MATCH ?
-      ORDER BY rank
-      LIMIT ?
-    `;
-    
+  // 螺栓查询
+  ipcMain.handle("db-query-bolts", (_) => {
+    return getDatabase().prepare("SELECT * FROM fastener_hex_bolt").all();
+  });
+
+  // FTS5 全文搜索
+  ipcMain.handle("db-search", (_, query: string, limit: number = 20) => {
     try {
-      // FTS5 查询语法：支持前缀匹配、通配符等
-      const searchTerm = query.split(' ').map(w => `${w}*`).join(' ');
-      return getDatabase().prepare(sql).all(searchTerm, limit);
-    } catch (err) {
-      // 回退到 LIKE 查询
-      const likeSql = `SELECT * FROM ${baseTable} WHERE designation LIKE ? LIMIT ?`;
-      return getDatabase().prepare(likeSql).all(`%${query}%`, limit);
+      return getDatabase().prepare(
+        `SELECT sd.*, match_info FROM search_fts sf 
+         JOIN search_document sd ON sf.doc_id = sd.doc_id 
+         WHERE search_fts MATCH ? ORDER BY rank LIMIT ?`
+      ).all(`${query}*`, limit);
+    } catch {
+      return [];
     }
+  });
+
+  // 材料查询
+  ipcMain.handle("db-query-materials", (_) => {
+    return getDatabase().prepare("SELECT * FROM material_grade").all();
+  });
+
+  // 螺纹查询
+  ipcMain.handle("db-query-threads", (_) => {
+    return getDatabase().prepare("SELECT * FROM thread_metric").all();
   });
 
   // 逆向识别向导 - 通过测量值反推标准规格 (Section 5.6)

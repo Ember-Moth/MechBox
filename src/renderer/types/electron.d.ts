@@ -29,8 +29,10 @@ declare global {
         queryUserStandards: (category: string) => Promise<any[]>;
         deleteUserStandard: (id: string) => Promise<any>;
         getUserStandard: (id: string) => Promise<any | null>;
-        // FTS5 模糊检索
-        fuzzySearch: (table: string, query: string, limit?: number) => Promise<any[]>;
+        // FTS5 全文搜索
+        search: (query: string, limit?: number) => Promise<any[]>;
+        // 材料查询
+        queryMaterials: () => Promise<any[]>;
         // 逆向识别向导
         reverseIdentify: (type: string, measurements: Record<string, number>) => Promise<any[]>;
         // Excel 导入

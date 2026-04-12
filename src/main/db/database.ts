@@ -1,12 +1,7 @@
 import Database from "better-sqlite3";
 import { app } from "electron";
 import { join } from "path";
-import { existsSync, mkdirSync } from "fs";
-import iso286Data from "../../../data/standards/tolerances/iso286.json";
-import as568Data from "../../../data/standards/o-ring/as568.json";
-import deepGrooveData from "../../../data/standards/bearings/deep-groove.json";
-import isoMetricThreadsData from "../../../data/standards/threads/iso-metric.json";
-import hexBoltsData from "../../../data/standards/bolts/hex-bolts.json";
+import { existsSync, mkdirSync, readFileSync } from "fs";
 
 let db: Database.Database;
 
@@ -52,159 +47,184 @@ export function initDatabase() {
       )`,
     ).run();
 
-    // Section 8.2 Fix: 只在首次运行时创建系统表，后续启动不再 DROP
     if (isFirstRun) {
-      db.prepare(
-        `CREATE TABLE tolerance_it_grades (grade TEXT, size_index INTEGER, value INTEGER, PRIMARY KEY (grade, size_index))`,
-      ).run();
-      db.prepare(
-        `CREATE TABLE fundamental_deviations (type TEXT, position TEXT, size_index INTEGER, value INTEGER, PRIMARY KEY (type, position, size_index))`,
-      ).run();
-      db.prepare(
-        `CREATE TABLE oring_standards (standard TEXT, code TEXT, id REAL, cs REAL, PRIMARY KEY (standard, code))`,
-      ).run();
-      db.prepare(
-        `CREATE TABLE bearings_deep_groove (designation TEXT PRIMARY KEY, inner_diameter REAL, outer_diameter REAL, width REAL, C_r REAL, C_0r REAL, speed_limit_grease REAL, speed_limit_oil REAL, mass REAL)`,
-      ).run();
-      db.prepare(
-        `CREATE TABLE threads_iso_metric (designation TEXT PRIMARY KEY, d REAL, pitch REAL, d2 REAL, d1 REAL, stress_area REAL)`,
-      ).run();
-      db.prepare(
-        `CREATE TABLE bolts_hex (designation TEXT PRIMARY KEY, d REAL, head_width_s REAL, head_height_k REAL, standard TEXT)`,
-      ).run();
-      console.log("System tables created (first run)");
+      console.log("First run detected - creating V3 schema...");
+      createV3Schema();
+      seedInitialData();
+    } else {
+      // 检查是否需要迁移到 V3
+      migrateToV3IfNeeded();
     }
+
+    console.log("Database initialization complete");
   } catch (err) {
     console.error("Database initialization failed:", err);
     throw err;
   }
 
-  // FTS5 全文搜索虚拟表 - 高性能模糊检索 (Section 2.3.1)
-  db.prepare(
-    `CREATE VIRTUAL TABLE IF NOT EXISTS bearings_fts USING fts5(designation, inner_diameter, outer_diameter, width, C_r, C_0r, content='bearings_deep_groove', content_rowid='rowid')`,
-  ).run();
-  db.prepare(
-    `CREATE VIRTUAL TABLE IF NOT EXISTS bolts_fts USING fts5(designation, d, head_width_s, head_height_k, standard, content='bolts_hex', content_rowid='rowid')`,
-  ).run();
-  db.prepare(
-    `CREATE VIRTUAL TABLE IF NOT EXISTS threads_fts USING fts5(designation, d, pitch, d2, d1, stress_area, content='threads_iso_metric', content_rowid='rowid')`,
-  ).run();
+  return db;
+}
 
-  // 导入数据 (仅首次运行或数据版本变更时执行)
-  const needsDataImport = isFirstRun;
-  
-  if (needsDataImport) {
-    const insertIT = db.prepare(
-      "INSERT OR IGNORE INTO tolerance_it_grades (grade, size_index, value) VALUES (?, ?, ?)",
-    );
-    db.transaction((data) => {
-      for (const [grade, values] of Object.entries(data)) {
-        (values as number[]).forEach((val, idx) => insertIT.run(grade, idx, val));
-      }
-    })(iso286Data.it_grades);
+function createV3Schema() {
+  const schemaSql = readFileSync(
+    join(__dirname, "../../../DOC/schema_v3.sql"),
+    "utf-8"
+  );
+  db.exec(schemaSql);
+  console.log("V3 schema created successfully");
+}
 
-    const insertDev = db.prepare(
-      "INSERT OR IGNORE INTO fundamental_deviations (type, position, size_index, value) VALUES (?, ?, ?, ?)",
-    );
-    db.transaction((data) => {
-      for (const [type, positions] of Object.entries(data)) {
-        for (const [pos, values] of Object.entries(positions as any)) {
-          (values as number[]).forEach((val, idx) =>
-            insertDev.run(type, pos, idx, val),
-          );
-        }
-      }
-    })(iso286Data.fundamental_deviations);
+function seedInitialData() {
+  const seedSql = readFileSync(
+    join(__dirname, "../../../DOC/seed_sources_v3.sql"),
+    "utf-8"
+  );
+  db.exec(seedSql);
 
-    const insertOring = db.prepare(
-      "INSERT OR IGNORE INTO oring_standards (standard, code, id, cs) VALUES (?, ?, ?, ?)",
-    );
-    db.transaction((data) => {
-      data.sizes.forEach((s: any) =>
-        insertOring.run(data.standard, s.code, s.id, s.cs),
-      );
-    })(as568Data);
+  // 导入现有 JSON 数据到 V3 表
+  importJsonToV3Tables();
 
-    const insertBearing = db.prepare(
-      "INSERT OR IGNORE INTO bearings_deep_groove (designation, inner_diameter, outer_diameter, width, C_r, C_0r, speed_limit_grease, speed_limit_oil, mass) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    );
-    db.transaction((data) => {
-      data.bearings.forEach((b: any) =>
-        insertBearing.run(
-          b.designation,
-          b.d,
-          b.D,
-          b.B,
-          b.C_r,
-          b.C_0r,
-          b.speed_limit_grease,
-          b.speed_limit_oil,
-          b.mass,
-        ),
-      );
-    })(deepGrooveData);
+  console.log("Initial data seeded successfully");
+}
 
-    const insertThread = db.prepare(
-      "INSERT OR IGNORE INTO threads_iso_metric (designation, d, pitch, d2, d1, stress_area) VALUES (?, ?, ?, ?, ?, ?)",
-    );
-    db.transaction((data) => {
-      data.threads.forEach((t: any) =>
-        insertThread.run(t.designation, t.d, t.pitch, t.d2, t.d1, t.stress_area),
-      );
-    })(isoMetricThreadsData);
-
-    const insertBolt = db.prepare(
-      "INSERT OR IGNORE INTO bolts_hex (designation, d, head_width_s, head_height_k, standard) VALUES (?, ?, ?, ?, ?)",
-    );
-    db.transaction((data) => {
-      data.bolts.forEach((b: any) =>
-        insertBolt.run(
-          b.designation,
-          b.d,
-          b.head_width_s,
-          b.head_height_k,
-          b.standard,
-        ),
-      );
-    })(hexBoltsData);
-  }
-
-  // 记录系统标准数据版本 (每次启动都更新)
-  const insertVersion = db.prepare(
-    "INSERT OR REPLACE INTO data_version (standard_code, version, source, checksum) VALUES (?, ?, ?, ?)",
+function importJsonToV3Tables() {
+  // 导入螺纹数据
+  const threadsData = require("../../../data/standards/threads/iso-metric.json");
+  const insertThread = db.prepare(
+    `INSERT OR IGNORE INTO thread_metric 
+     (thread_id, designation, nominal_d, pitch, pitch_diameter, minor_diameter, stress_area)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
   
-  // 简单版本：使用记录数作为 checksum
-  const versionRecords = [
-    ['ISO286', '1.0.0', 'system', `it_grades:${iso286Data.it_grades ? Object.keys(iso286Data.it_grades).length : 0}`],
-    ['AS568', '1.0.0', 'system', `sizes:${as568Data.sizes ? as568Data.sizes.length : 0}`],
-    ['DEEP_GROOVE', '1.0.0', 'system', `bearings:${deepGrooveData.bearings ? deepGrooveData.bearings.length : 0}`],
-    ['ISO_METRIC_THREAD', '1.0.0', 'system', `threads:${isoMetricThreadsData.threads ? isoMetricThreadsData.threads.length : 0}`],
-    ['HEX_BOLT', '1.0.0', 'system', `bolts:${hexBoltsData.bolts ? hexBoltsData.bolts.length : 0}`],
-  ];
-  
-  const insertVersions = db.transaction(() => {
-    versionRecords.forEach(([code, version, source, checksum]) => {
-      insertVersion.run(code, version, source, checksum);
+  db.transaction((data: any) => {
+    data.threads.forEach((t: any) => {
+      insertThread.run(
+        `thread_${t.designation.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        t.designation,
+        t.d,
+        t.pitch,
+        t.d2,
+        t.d1,
+        t.stress_area
+      );
     });
-  });
-  insertVersions();
-  console.log("Data versions recorded");
+  })(threadsData);
 
-  // 同步 FTS5 索引 - 高性能模糊检索
-  db.exec(`
-    INSERT OR REPLACE INTO bearings_fts(rowid, designation, inner_diameter, outer_diameter, width, C_r, C_0r)
-    SELECT rowid, designation, inner_diameter, outer_diameter, width, C_r, C_0r FROM bearings_deep_groove;
-    
-    INSERT OR REPLACE INTO bolts_fts(rowid, designation, d, head_width_s, head_height_k, standard)
-    SELECT rowid, designation, d, head_width_s, head_height_k, standard FROM bolts_hex;
-    
-    INSERT OR REPLACE INTO threads_fts(rowid, designation, d, pitch, d2, d1, stress_area)
-    SELECT rowid, designation, d, pitch, d2, d1, stress_area FROM threads_iso_metric;
-  `);
-  console.log("FTS5 indexes built successfully");
+  // 导入螺栓数据
+  const boltsData = require("../../../data/standards/bolts/hex-bolts.json");
+  const insertBolt = db.prepare(
+    `INSERT OR IGNORE INTO fastener_hex_bolt 
+     (bolt_id, designation, nominal_d, head_width_s, head_height_k)
+     VALUES (?, ?, ?, ?, ?)`
+  );
 
-  return db;
+  db.transaction((data: any) => {
+    data.bolts.forEach((b: any) => {
+      insertBolt.run(
+        `bolt_${b.designation.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        b.designation,
+        b.d,
+        b.head_width_s,
+        b.head_height_k
+      );
+    });
+  })(boltsData);
+
+  // 导入轴承数据
+  const bearingsData = require("../../../data/standards/bearings/deep-groove.json");
+  const insertBearing = db.prepare(
+    `INSERT OR IGNORE INTO bearing_basic 
+     (bearing_id, designation, bearing_type, inner_diameter, outer_diameter, width, 
+      dynamic_load_rating, static_load_rating, grease_speed_limit, oil_speed_limit, mass)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+
+  db.transaction((data: any) => {
+    data.bearings.forEach((b: any) => {
+      insertBearing.run(
+        `bearing_${b.designation}`,
+        b.designation,
+        data.type || 'deep_groove_ball',
+        b.d,
+        b.D,
+        b.B,
+        b.C_r,
+        b.C_0r,
+        b.speed_limit_grease,
+        b.speed_limit_oil,
+        b.mass
+      );
+    });
+  })(bearingsData);
+
+  // 导入 O 型圈数据
+  const oringData = require("../../../data/standards/o-ring/as568.json");
+  const insertOring = db.prepare(
+    `INSERT OR IGNORE INTO seal_oring_size 
+     (oring_id, standard_id, dash_code, inner_diameter, cross_section)
+     VALUES (?, ?, ?, ?, ?)`
+  );
+
+  db.transaction((data: any) => {
+    data.sizes.forEach((s: any) => {
+      insertOring.run(
+        `oring_${data.standard}_${s.code}`,
+        data.standard,
+        s.code,
+        s.id,
+        s.cs
+      );
+    });
+  })(oringData);
+
+  // 导入材料数据
+  const materialsData = require("../../../data/materials-extended.json");
+  const insertMaterial = db.prepare(
+    `INSERT OR IGNORE INTO material_grade 
+     (material_id, grade_code, grade_name, material_family, density, elastic_modulus, shear_modulus,
+      yield_strength, tensile_strength, elongation, temp_min, temp_max, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+
+  db.transaction((data: any) => {
+    Object.entries(data).forEach(([category, materials]: [string, any]) => {
+      if (Array.isArray(materials)) {
+        materials.forEach((m: any) => {
+          insertMaterial.run(
+            `material_${m.designation.replace(/[^a-zA-Z0-9]/g, '_')}`,
+            m.designation,
+            m.name_zh,
+            category,
+            m.density,
+            m.E,
+            m.G,
+            m.yield_strength,
+            m.tensile_strength,
+            m.elongation,
+            m.temp_min,
+            m.temp_max,
+            m.notes
+          );
+        });
+      }
+    });
+  })(materialsData);
+
+  console.log("JSON data imported to V3 tables");
+}
+
+function migrateToV3IfNeeded() {
+  // 检查是否已经有 V3 表
+  const hasV3Tables = db.prepare(
+    "SELECT count(*) as cnt FROM sqlite_master WHERE type='table' AND name='bearing_basic'"
+  ).get() as { cnt: number };
+
+  if (hasV3Tables.cnt === 0) {
+    console.log("Migrating to V3 schema...");
+    createV3Schema();
+    importJsonToV3Tables();
+    console.log("Migration complete");
+  }
 }
 
 export function getDatabase() {

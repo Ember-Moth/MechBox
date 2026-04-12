@@ -25,9 +25,12 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke("db-user-standard-delete", id),
     getUserStandard: (id: string) =>
       ipcRenderer.invoke("db-user-standard-get", id),
-    // FTS5 模糊检索 - 高性能全文搜索
-    fuzzySearch: (table: string, query: string, limit?: number) =>
-      ipcRenderer.invoke("db-fuzzy-search", table, query, limit),
+    // FTS5 全文搜索
+    search: (query: string, limit?: number) =>
+      ipcRenderer.invoke("db-search", query, limit),
+    // 材料查询
+    queryMaterials: () =>
+      ipcRenderer.invoke("db-query-materials"),
     // 逆向识别向导 - 测量反推标准规格
     reverseIdentify: (type: string, measurements: Record<string, number>) =>
       ipcRenderer.invoke("db-reverse-identify", type, measurements),
