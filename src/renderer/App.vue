@@ -15,6 +15,9 @@ import {
     BarChartOutlined,
     WarningOutlined,
     FileSearchOutlined,
+    CloudUploadOutlined,
+    FileTextOutlined,
+    PercentageOutlined,
 } from "@ant-design/icons-vue";
 import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
@@ -27,7 +30,10 @@ import MaterialLibraryPage from "./views/MaterialLibraryPage.vue";
 import StandardPartsLibraryPage from "./views/StandardPartsLibraryPage.vue";
 import ParamScanPage from "./views/ParamScanPage.vue";
 import FailureDiagnosisPage from "./views/FailureDiagnosisPage.vue";
+import MonteCarloPage from "./views/MonteCarloPage.vue";
+import DFMAnalysisPage from "./views/DFMAnalysisPage.vue";
 import ProjectCenterPage from "./views/ProjectCenterPage.vue";
+import ReportCenterPage from "./views/ReportCenterPage.vue";
 import SettingsPage from "./views/SettingsPage.vue";
 import FavoritesPage from "./views/FavoritesPage.vue";
 import AboutPage from "./views/AboutPage.vue";
@@ -49,9 +55,13 @@ const menuItems = [
     { key: "standard-parts", icon: FileSearchOutlined, label: "标准件库" },
     { key: "divider-3", type: "divider" },
     { key: "param-scan", icon: BarChartOutlined, label: "参数扫描" },
+    { key: "monte-carlo", icon: PercentageOutlined, label: "蒙特卡洛" },
+    { key: "dfm", icon: CloudUploadOutlined, label: "DFM分析" },
     { key: "failure-diag", icon: WarningOutlined, label: "失效诊断" },
-    { key: "projects", icon: FolderOpenOutlined, label: "项目中心" },
     { key: "divider-4", type: "divider" },
+    { key: "projects", icon: FolderOpenOutlined, label: "项目中心" },
+    { key: "reports", icon: FileTextOutlined, label: "报告中心" },
+    { key: "divider-5", type: "divider" },
     { key: "favorites", icon: StarOutlined, label: "我的收藏" },
     { key: "settings", icon: ControlOutlined, label: "设置" },
     { key: "about", icon: InfoCircleOutlined, label: "关于" },
@@ -140,11 +150,20 @@ onUnmounted(() => {
                         <div v-else-if="selectedKeys[0] === 'param-scan'">
                             <ParamScanPage />
                         </div>
+                        <div v-else-if="selectedKeys[0] === 'monte-carlo'">
+                            <MonteCarloPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'dfm'">
+                            <DFMAnalysisPage />
+                        </div>
                         <div v-else-if="selectedKeys[0] === 'failure-diag'">
                             <FailureDiagnosisPage />
                         </div>
                         <div v-else-if="selectedKeys[0] === 'projects'">
                             <ProjectCenterPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'reports'">
+                            <ReportCenterPage />
                         </div>
                         <div v-else-if="selectedKeys[0] === 'settings'">
                             <SettingsPage />
