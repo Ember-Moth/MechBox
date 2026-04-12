@@ -58,6 +58,7 @@ import ReverseIdentifyPage from "./views/ReverseIdentifyPage.vue";
 import MaterialSubstitutionPage from "./views/MaterialSubstitutionPage.vue";
 import ExcelImportPage from "./views/ExcelImportPage.vue";
 import LaTeXReportPage from "./views/LaTeXReportPage.vue";
+import BOMExportPage from "./views/BOMExportPage.vue";
 import { industrialCompactTheme } from "./themes/industrial-compact";
 
 const collapsed = ref(false);
@@ -122,13 +123,13 @@ const menuGroups = [
             { key: "projects", icon: FolderOpenOutlined, label: "项目中心" },
             { key: "reports", icon: FileTextOutlined, label: "报告中心" },
             { key: "favorites", icon: StarOutlined, label: "我的收藏" },
+            { key: "bom-export", icon: FileTextOutlined, label: "BOM导出" },
         ],
     },
 ];
 
 // System items pinned at bottom (Section 4.3.3 Split Layout)
 const systemItems = [
-    { key: "dashboard", icon: DashboardOutlined, label: "工作台" },
     { key: "settings", icon: ControlOutlined, label: "设置" },
     { key: "about", icon: InfoCircleOutlined, label: "关于" },
 ];
@@ -154,6 +155,13 @@ onUnmounted(() => {
                 <div class="logo">MechBox</div>
                 <!-- Upper scrollable area: business sub-menus -->
                 <div class="menu-scroll">
+                    <!-- Dashboard as first standalone item -->
+                    <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
+                        <a-menu-item key="dashboard">
+                            <template #icon><DashboardOutlined /></template>
+                            <span>工作台</span>
+                        </a-menu-item>
+                    </a-menu>
                     <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
                         <a-sub-menu v-for="group in menuGroups" :key="group.key">
                             <template #icon><component :is="group.icon" /></template>
@@ -167,8 +175,8 @@ onUnmounted(() => {
                 </div>
                 <!-- Bottom-pinned system items -->
                 <div class="system-bar">
-                    <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" :selectable="false">
-                        <a-menu-item v-for="item in systemItems" :key="item.key">
+                    <a-menu theme="dark" mode="inline" :selectable="false">
+                        <a-menu-item v-for="item in systemItems" :key="item.key" @click="selectedKeys = [item.key]">
                             <template #icon><component :is="item.icon" /></template>
                             <span>{{ item.label }}</span>
                         </a-menu-item>
@@ -260,6 +268,9 @@ onUnmounted(() => {
                         </div>
                         <div v-else-if="selectedKeys[0] === 'favorites'">
                             <FavoritesPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'bom-export'">
+                            <BOMExportPage />
                         </div>
                         <div v-else-if="selectedKeys[0] === 'reverse-identify'">
                             <ReverseIdentifyPage />

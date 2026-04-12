@@ -23,6 +23,8 @@ export function initDatabase() {
   const dbPath = join(dbDir, "mechbox.db");
   console.log("Attempting to open database at:", dbPath);
 
+  const isFirstRun = !existsSync(dbPath);
+
   try {
     db = new Database(dbPath);
     db.pragma("journal_mode = WAL");
@@ -50,14 +52,28 @@ export function initDatabase() {
       )`,
     ).run();
 
-    // 使用 DROP 重置系统表结构，确保数据与 JSON 定义始终一致
-    db.exec("DROP TABLE IF EXISTS tolerance_it_grades");
-    db.exec("DROP TABLE IF EXISTS fundamental_deviations");
-    db.exec("DROP TABLE IF EXISTS oring_standards");
-    db.exec("DROP TABLE IF EXISTS bearings_deep_groove");
-    db.exec("DROP TABLE IF EXISTS threads_iso_metric");
-    db.exec("DROP TABLE IF EXISTS bolts_hex");
-    console.log("Tables dropped successfully");
+    // Section 8.2 Fix: 只在首次运行时创建系统表，后续启动不再 DROP
+    if (isFirstRun) {
+      db.prepare(
+        `CREATE TABLE tolerance_it_grades (grade TEXT, size_index INTEGER, value INTEGER, PRIMARY KEY (grade, size_index))`,
+      ).run();
+      db.prepare(
+        `CREATE TABLE fundamental_deviations (type TEXT, position TEXT, size_index INTEGER, value INTEGER, PRIMARY KEY (type, position, size_index))`,
+      ).run();
+      db.prepare(
+        `CREATE TABLE oring_standards (standard TEXT, code TEXT, id REAL, cs REAL, PRIMARY KEY (standard, code))`,
+      ).run();
+      db.prepare(
+        `CREATE TABLE bearings_deep_groove (designation TEXT PRIMARY KEY, inner_diameter REAL, outer_diameter REAL, width REAL, C_r REAL, C_0r REAL, speed_limit_grease REAL, speed_limit_oil REAL, mass REAL)`,
+      ).run();
+      db.prepare(
+        `CREATE TABLE threads_iso_metric (designation TEXT PRIMARY KEY, d REAL, pitch REAL, d2 REAL, d1 REAL, stress_area REAL)`,
+      ).run();
+      db.prepare(
+        `CREATE TABLE bolts_hex (designation TEXT PRIMARY KEY, d REAL, head_width_s REAL, head_height_k REAL, standard TEXT)`,
+      ).run();
+      console.log("System tables created (first run)");
+    }
   } catch (err) {
     console.error("Database initialization failed:", err);
     throw err;
