@@ -12,7 +12,95 @@
     "test": "vitest",
     "lint": "vue-tsc --noEmit",
     "rust:build": "cd rust-core && cargo build --release && cp target/release/libmechbox_core.* ../out/native/",
-    "rust:debug": "cd rust-core && cargo build"
+    "rust:debug": "cd rust-core && cargo build",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "dist:mac": "electron-builder --mac",
+    "dist:all": "electron-builder --win --linux --mac"
+  },
+  "build": {
+    "appId": "com.mechbox.app",
+    "productName": "MechBox",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "resources/**/*",
+      "data/**/*",
+      "DOC/schema_v3.sql",
+      "DOC/seed_sources_v3.sql",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "DOC",
+        "to": "DOC",
+        "filter": ["schema_v3.sql", "seed_sources_v3.sql"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Development",
+      "maintainer": "NekoRain <nekorain@example.com>",
+      "synopsis": "Mechanical Engineering Design Toolbox"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
   },
   "dependencies": {
     "@ant-design/icons-vue": "*",
@@ -39,6 +127,7 @@
     "@types/node": "*",
     "@vitejs/plugin-vue": "^5.2.4",
     "electron": "*",
+    "electron-builder": "^26.8.1",
     "electron-vite": "5.0.0",
     "typescript": "*",
     "vite": "^6.2.1",
