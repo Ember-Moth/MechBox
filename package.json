@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "*",
+    "ajv": "^8.18.0",
     "ant-design-vue": "*",
     "better-sqlite3": "*",
     "echarts": "*",
@@ -21,8 +22,7 @@
     "pinia": "*",
     "vue": "*",
     "vue-router": "*",
-    "xlsx": "*",
-    "ajv": "*"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@electron-toolkit/utils": "*",
