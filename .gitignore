@@ -93,15 +93,16 @@ typings/
 *.sln
 *.sw?
 
-# Electron / Vite specific
-dist
-dist-electron
-out
-release
+# Electron / Vite / Vue specific
+dist/
+dist-electron/
+out/
+release/
 *.asar
 *.zip
 *.dmg
 *.exe
+*.AppImage
 
 # Environment variables
 .env
@@ -114,7 +115,28 @@ release
 .gemini/
 .geminiignore
 
+# ------------------------------------------------------------------------------
+# MechBox Project Specific
+# ------------------------------------------------------------------------------
+
 # Database files (SQLite)
 *.db
 *.db-shm
 *.db-wal
+data/mechbox.db*
+
+# Rust / N-API Specific (For future Rust core)
+target/
+*.node
+npm/
+Cargo.lock
+
+# CAD Export Temp Files
+*.swp
+*.pyc
+__pycache__/
+*.step
+*.stp
+exports/
+temp/
+init-tmp/
