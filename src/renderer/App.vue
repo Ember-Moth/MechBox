@@ -196,7 +196,7 @@ onUnmounted(() => {
                 <!-- Bottom-pinned system items -->
                 <div class="system-bar">
                     <a-menu theme="dark" mode="inline" :selectable="false">
-                        <a-menu-item v-for="item in systemItems" :key="item.key" @click="selectedKeys = [item.key]">
+                        <a-menu-item v-for="item in systemItems" :key="item.key" @click="navigateTo(item.key)">
                             <template #icon><component :is="item.icon" /></template>
                             <span>{{ item.label }}</span>
                         </a-menu-item>
