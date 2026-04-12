@@ -26,8 +26,31 @@ export function initDatabase() {
   try {
     db = new Database(dbPath);
     db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
 
-    // 使用 DROP 重置表结构，确保数据与 JSON 定义始终一致
+    // 数据版本追踪表
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS data_version (
+        standard_code TEXT PRIMARY KEY,
+        version TEXT NOT NULL,
+        source TEXT DEFAULT 'system',
+        updated_at TEXT DEFAULT (datetime('now')),
+        checksum TEXT
+      )`,
+    ).run();
+
+    // 用户自定义标准表
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS user_standards (
+        id TEXT PRIMARY KEY,
+        category TEXT NOT NULL,
+        data TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+    ).run();
+
+    // 使用 DROP 重置系统表结构，确保数据与 JSON 定义始终一致
     db.exec("DROP TABLE IF EXISTS tolerance_it_grades");
     db.exec("DROP TABLE IF EXISTS fundamental_deviations");
     db.exec("DROP TABLE IF EXISTS oring_standards");
@@ -133,6 +156,28 @@ export function initDatabase() {
       ),
     );
   })(hexBoltsData);
+
+  // 记录系统标准数据版本
+  const insertVersion = db.prepare(
+    "INSERT OR REPLACE INTO data_version (standard_code, version, source, checksum) VALUES (?, ?, ?, ?)",
+  );
+  
+  // 简单版本：使用记录数作为 checksum
+  const versionRecords = [
+    ['ISO286', '1.0.0', 'system', `it_grades:${iso286Data.it_grades ? Object.keys(iso286Data.it_grades).length : 0}`],
+    ['AS568', '1.0.0', 'system', `sizes:${as568Data.sizes ? as568Data.sizes.length : 0}`],
+    ['DEEP_GROOVE', '1.0.0', 'system', `bearings:${deepGrooveData.bearings ? deepGrooveData.bearings.length : 0}`],
+    ['ISO_METRIC_THREAD', '1.0.0', 'system', `threads:${isoMetricThreadsData.threads ? isoMetricThreadsData.threads.length : 0}`],
+    ['HEX_BOLT', '1.0.0', 'system', `bolts:${hexBoltsData.bolts ? hexBoltsData.bolts.length : 0}`],
+  ];
+  
+  const insertVersions = db.transaction(() => {
+    versionRecords.forEach(([code, version, source, checksum]) => {
+      insertVersion.run(code, version, source, checksum);
+    });
+  });
+  insertVersions();
+  console.log("Data versions recorded");
 
   return db;
 }

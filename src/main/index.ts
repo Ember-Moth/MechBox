@@ -75,6 +75,35 @@ function registerIpcHandlers() {
   ipcMain.handle("db-query-bolts", (_) => {
     return getDatabase().prepare("SELECT * FROM bolts_hex").all();
   });
+
+  // 数据版本查询
+  ipcMain.handle("db-query-data-version", (_) => {
+    return getDatabase().prepare("SELECT * FROM data_version").all();
+  });
+
+  // 用户自定义标准 CRUD
+  ipcMain.handle("db-user-standard-add", (_, id, category, data) => {
+    const stmt = getDatabase().prepare(
+      "INSERT OR REPLACE INTO user_standards (id, category, data) VALUES (?, ?, ?)",
+    );
+    return stmt.run(id, category, JSON.stringify(data));
+  });
+
+  ipcMain.handle("db-user-standard-query", (_, category) => {
+    return getDatabase()
+      .prepare("SELECT id, category, data, created_at, updated_at FROM user_standards WHERE category = ?")
+      .all(category)
+      .map((row: any) => ({ ...row, data: JSON.parse(row.data) }));
+  });
+
+  ipcMain.handle("db-user-standard-delete", (_, id) => {
+    return getDatabase().prepare("DELETE FROM user_standards WHERE id = ?").run(id);
+  });
+
+  ipcMain.handle("db-user-standard-get", (_, id) => {
+    const row = getDatabase().prepare("SELECT * FROM user_standards WHERE id = ?").get(id);
+    return row ? { ...row, data: JSON.parse(row.data) } : null;
+  });
 }
 
 app.whenReady().then(() => {

@@ -18,6 +18,17 @@ declare global {
         queryBearings: () => Promise<any[]>;
         queryThreads: () => Promise<any[]>;
         queryBolts: () => Promise<any[]>;
+        queryDataVersion: () => Promise<Array<{
+          standard_code: string;
+          version: string;
+          source: string;
+          updated_at: string;
+          checksum: string;
+        }>>;
+        addUserStandard: (id: string, category: string, data: any) => Promise<any>;
+        queryUserStandards: (category: string) => Promise<any[]>;
+        deleteUserStandard: (id: string) => Promise<any>;
+        getUserStandard: (id: string) => Promise<any | null>;
       };
     };
   }
