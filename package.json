@@ -5,6 +5,7 @@
   "main": "./out/main/index.js",
   "author": "NekoRain",
   "scripts": {
+    "db:init": "python3 scripts/init_v3_db.py",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",

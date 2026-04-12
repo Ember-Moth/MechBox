@@ -216,7 +216,7 @@ CREATE TABLE IF NOT EXISTS seal_oring_size (
   FOREIGN KEY (standard_id) REFERENCES standard_document(standard_id),
   FOREIGN KEY (revision_id) REFERENCES standard_revision(revision_id),
   FOREIGN KEY (dataset_id) REFERENCES dataset_release(dataset_id),
-  UNIQUE (COALESCE(revision_id, ''), dash_code)
+  UNIQUE (revision_id, dash_code)
 );
 
 CREATE INDEX IF NOT EXISTS idx_seal_oring_size_dim
@@ -345,7 +345,7 @@ CREATE TABLE IF NOT EXISTS gear_module_standard (
   FOREIGN KEY (standard_id) REFERENCES standard_document(standard_id),
   FOREIGN KEY (revision_id) REFERENCES standard_revision(revision_id),
   FOREIGN KEY (dataset_id) REFERENCES dataset_release(dataset_id),
-  UNIQUE (COALESCE(revision_id, ''), gear_type, pressure_angle_deg, helix_angle_deg, module_value, module_system)
+  UNIQUE (revision_id, gear_type, pressure_angle_deg, helix_angle_deg, module_value, module_system)
 );
 
 CREATE INDEX IF NOT EXISTS idx_gear_module_standard_value
@@ -363,7 +363,7 @@ CREATE TABLE IF NOT EXISTS rule_table (
   FOREIGN KEY (standard_id) REFERENCES standard_document(standard_id),
   FOREIGN KEY (revision_id) REFERENCES standard_revision(revision_id),
   FOREIGN KEY (dataset_id) REFERENCES dataset_release(dataset_id),
-  UNIQUE (COALESCE(revision_id, ''), rule_code)
+  UNIQUE (revision_id, rule_code)
 );
 
 CREATE TABLE IF NOT EXISTS rule_row (
