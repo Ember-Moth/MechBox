@@ -2,11 +2,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { calcPreload, calcStress, recommendTorque } from '../../engine/bolts/strength'
 import { exportBoltAssemblyToSTEP } from '../../engine/cad-export'
-import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, DownloadOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+import { useStandardStore } from '../../store/useStandardStore'
 
+const store = useStandardStore()
 const boltList = ref<any[]>([])
 const selectedDesignation = ref('M10')
 const propertyClass = ref('8.8')
+const isFavorited = ref(false)
 
 // 工况参数
 const conditions = ref({
@@ -47,9 +52,42 @@ function extractDiameter(designation: string): number {
   return match ? parseFloat(match[1]) : 0
 }
 
-function exportPDF() {
-  // TODO: Implement PDF export
-  alert('PDF导出功能正在开发中')
+async function exportPDF() {
+  const element = document.querySelector('.bolts-page') as HTMLElement
+  if (!element) return
+
+  const canvas = await html2canvas(element, { scale: 2, useCORS: true })
+  const imgData = canvas.toDataURL('image/png')
+
+  const pdf = new jsPDF('p', 'mm', 'a4')
+  const pdfWidth = pdf.internal.pageSize.getWidth()
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+
+  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+  pdf.save(`MechBox-Bolt-${selectedDesignation.value}-${new Date().toISOString().slice(0,10)}.pdf`)
+}
+
+function toggleFavorite() {
+  if (!selectedBolt.value) return
+  
+  if (isFavorited.value) {
+    // Remove from favorites
+    const id = `bolt_${selectedDesignation.value}`
+    store.removeFavorite(id)
+    isFavorited.value = false
+  } else {
+    // Add to favorites
+    store.addFavorite('bolts', `螺栓 ${selectedDesignation.value} (${propertyClass.value}级)`, {
+      designation: selectedDesignation.value,
+      propertyClass: propertyClass.value,
+      conditions: { ...conditions.value },
+      results: {
+        preload: preloadResult.value,
+        stress: stressResult.value?.von_mises
+      }
+    })
+    isFavorited.value = true
+  }
 }
 
 function exportCAD() {
@@ -77,13 +115,24 @@ function exportCAD() {
     <div class="toolbar">
       <div class="brand">MechBox <small>螺栓连接模块</small></div>
       <a-space>
+        <a-button 
+          size="small" 
+          :type="isFavorited ? 'default' : 'default'"
+          @click="toggleFavorite"
+        >
+          <template #icon>
+            <StarTwoTone v-if="isFavorited" two-tone-color="#faad14" />
+            <StarOutlined v-else />
+          </template>
+          {{ isFavorited ? '已收藏' : '收藏' }}
+        </a-button>
         <a-button size="small" type="primary" @click="exportPDF">
           <template #icon><FilePdfOutlined /></template>创建PDF
         </a-button>
         <a-button size="small" @click="exportCAD">
           <template #icon><DownloadOutlined /></template>导出CAD
         </a-button>
-        <a-button size="small">
+        <a-button size="small" @click="() => window.print()">
           <template #icon><PrinterOutlined /></template>打印报告
         </a-button>
       </a-space>

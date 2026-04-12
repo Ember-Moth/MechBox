@@ -2,9 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStandardStore } from '../../store/useStandardStore'
 import { calcLife, calcEquivalentLoad } from '../../engine/bearings/life'
-import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined } from '@ant-design/icons-vue'
+import { FilePdfOutlined, PrinterOutlined, InfoCircleOutlined, StarOutlined, StarTwoTone } from '@ant-design/icons-vue'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 const store = useStandardStore()
+const isFavorited = ref(false)
 
 // 工况参数
 const conditions = ref({
@@ -35,6 +38,39 @@ const results = computed(() => {
 
   return { P, life }
 })
+
+async function exportPDF() {
+  const element = document.querySelector('.bearings-page') as HTMLElement
+  if (!element) return
+
+  const canvas = await html2canvas(element, { scale: 2, useCORS: true })
+  const imgData = canvas.toDataURL('image/png')
+
+  const pdf = new jsPDF('p', 'mm', 'a4')
+  const pdfWidth = pdf.internal.pageSize.getWidth()
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+
+  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+  pdf.save(`MechBox-Bearing-${selectedDesignation.value}-${new Date().toISOString().slice(0,10)}.pdf`)
+}
+
+function toggleFavorite() {
+  if (!selectedBearing.value) return
+  
+  if (isFavorited.value) {
+    const id = `bearing_${selectedDesignation.value}`
+    store.removeFavorite(id)
+    isFavorited.value = false
+  } else {
+    store.addFavorite('bearings', `轴承 ${selectedDesignation.value}`, {
+      designation: selectedDesignation.value,
+      bearing: selectedBearing.value,
+      conditions: { ...conditions.value },
+      results: results.value
+    })
+    isFavorited.value = true
+  }
+}
 </script>
 
 <template>
@@ -42,8 +78,22 @@ const results = computed(() => {
     <div class="toolbar">
       <div class="brand">MechBox <small>Bearings Module</small></div>
       <a-space>
-        <a-button size="small" type="primary"><template #icon><FilePdfOutlined /></template>创建PDF</a-button>
-        <a-button size="small"><template #icon><PrinterOutlined /></template>打印报告</a-button>
+        <a-button 
+          size="small"
+          @click="toggleFavorite"
+        >
+          <template #icon>
+            <StarTwoTone v-if="isFavorited" two-tone-color="#faad14" />
+            <StarOutlined v-else />
+          </template>
+          {{ isFavorited ? '已收藏' : '收藏' }}
+        </a-button>
+        <a-button size="small" type="primary" @click="exportPDF">
+          <template #icon><FilePdfOutlined /></template>创建PDF
+        </a-button>
+        <a-button size="small" @click="() => window.print()">
+          <template #icon><PrinterOutlined /></template>打印报告
+        </a-button>
       </a-space>
     </div>
 
