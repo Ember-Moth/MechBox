@@ -8,12 +8,14 @@ import {
     ToolOutlined,
     StarOutlined,
 } from "@ant-design/icons-vue";
+import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
 import TolerancesPage from "./views/tolerances/TolerancesPage.vue";
 import SealsPage from "./views/seals/SealsPage.vue";
 import BearingsPage from "./views/bearings/BearingsPage.vue";
 import BoltsPage from "./views/bolts/BoltsPage.vue";
 import FavoritesPage from "./views/FavoritesPage.vue";
+import { industrialCompactTheme } from "./themes/industrial-compact";
 
 const collapsed = ref(false);
 const selectedKeys = ref(["dashboard"]);
@@ -43,65 +45,67 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <a-layout style="min-height: 100vh">
-        <a-layout-sider v-model:collapsed="collapsed" collapsible>
-            <div class="logo">MechBox</div>
-            <a-menu
-                v-model:selectedKeys="selectedKeys"
-                theme="dark"
-                mode="inline"
-            >
-                <a-menu-item v-for="item in menuItems" :key="item.key">
-                    <template #icon>
-                        <component :is="item.icon" />
-                    </template>
-                    <span>{{ item.label }}</span>
-                </a-menu-item>
-            </a-menu>
-        </a-layout-sider>
-        <a-layout>
-            <a-layout-header
-                style="
-                    background: #fff;
-                    padding: 0;
-                    text-align: center;
-                    font-weight: bold;
-                "
-            >
-                机械设计工具箱
-            </a-layout-header>
-            <a-layout-content style="margin: 16px">
-                <div
-                    :style="{
-                        padding: '24px',
-                        background: '#fff',
-                        minHeight: '360px',
-                        borderRadius: '8px',
-                    }"
+    <ConfigProvider :theme="industrialCompactTheme">
+        <a-layout style="min-height: 100vh">
+            <a-layout-sider v-model:collapsed="collapsed" collapsible>
+                <div class="logo">MechBox</div>
+                <a-menu
+                    v-model:selectedKeys="selectedKeys"
+                    theme="dark"
+                    mode="inline"
                 >
-                    <div v-if="selectedKeys[0] === 'dashboard'">
-                        <Dashboard />
+                    <a-menu-item v-for="item in menuItems" :key="item.key">
+                        <template #icon>
+                            <component :is="item.icon" />
+                        </template>
+                        <span>{{ item.label }}</span>
+                    </a-menu-item>
+                </a-menu>
+            </a-layout-sider>
+            <a-layout>
+                <a-layout-header
+                    style="
+                        background: #fff;
+                        padding: 0;
+                        text-align: center;
+                        font-weight: bold;
+                    "
+                >
+                    机械设计工具箱
+                </a-layout-header>
+                <a-layout-content style="margin: 16px">
+                    <div
+                        :style="{
+                            padding: '24px',
+                            background: '#fff',
+                            minHeight: '360px',
+                            borderRadius: '8px',
+                        }"
+                    >
+                        <div v-if="selectedKeys[0] === 'dashboard'">
+                            <Dashboard />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'tolerances'">
+                            <TolerancesPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'seals'">
+                            <SealsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'bearings'">
+                            <BearingsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'bolts'">
+                            <BoltsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'favorites'">
+                            <FavoritesPage />
+                        </div>
+                        <div v-else>正在构建 {{ selectedKeys[0] }} 模块...</div>
                     </div>
-                    <div v-else-if="selectedKeys[0] === 'tolerances'">
-                        <TolerancesPage />
-                    </div>
-                    <div v-else-if="selectedKeys[0] === 'seals'">
-                        <SealsPage />
-                    </div>
-                    <div v-else-if="selectedKeys[0] === 'bearings'">
-                        <BearingsPage />
-                    </div>
-                    <div v-else-if="selectedKeys[0] === 'bolts'">
-                        <BoltsPage />
-                    </div>
-                    <div v-else-if="selectedKeys[0] === 'favorites'">
-                        <FavoritesPage />
-                    </div>
-                    <div v-else>正在构建 {{ selectedKeys[0] }} 模块...</div>
-                </div>
-            </a-layout-content>
+                </a-layout-content>
+            </a-layout>
         </a-layout>
-    </a-layout>
+    </ConfigProvider>
 </template>
 
 <style scoped>
