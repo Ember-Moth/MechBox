@@ -6,12 +6,17 @@ declare global {
     dashCode?: string;
     crossSection?: number;
     application?: "radial-outer" | "radial-inner" | "axial";
+    isStatic?: boolean;
     medium?: string;
     temperatureC?: number;
     pressureMpa?: number;
     pressurePsi?: number;
     hardness?: number;
     clearanceMm?: number;
+    glandDiameterMm?: number;
+    grooveDepthMm?: number;
+    grooveWidthMm?: number;
+    candidateLimit?: number;
   }
 
   interface Window {

@@ -12,12 +12,17 @@ type OringRecommendationInput = {
   dashCode?: string;
   crossSection?: number;
   application?: "radial-outer" | "radial-inner" | "axial";
+  isStatic?: boolean;
   medium?: string;
   temperatureC?: number;
   pressureMpa?: number;
   pressurePsi?: number;
   hardness?: number;
   clearanceMm?: number;
+  glandDiameterMm?: number;
+  grooveDepthMm?: number;
+  grooveWidthMm?: number;
+  candidateLimit?: number;
 };
 
 const MM_PER_INCH = 25.4;
@@ -126,6 +131,21 @@ function pickNearestHardness(input?: number): number {
   return Math.abs(input - 90) < Math.abs(input - 70) ? 90 : 70;
 }
 
+function getNumericWindow(
+  ruleCode: string,
+  rowKey: string,
+  minColumn = "min_pct",
+  maxColumn = "max_pct",
+) {
+  const hydrated = getHydratedRuleTable(ruleCode);
+  const row = hydrated?.rows.find((item) => item.row_key === rowKey);
+  if (!row) return null;
+  return {
+    min: row.numericValues[minColumn]?.value ?? null,
+    max: row.numericValues[maxColumn]?.value ?? null,
+  };
+}
+
 function buildOringRecommendation(input: OringRecommendationInput) {
   const standardId = normalizeOringStandard(input.standard) ?? "std_as568";
   const selectedSize = input.dashCode
@@ -146,6 +166,9 @@ function buildOringRecommendation(input: OringRecommendationInput) {
   const crossSectionMm =
     typeof input.crossSection === "number" ? input.crossSection : selectedSize?.cross_section ?? null;
   const temperatureC = typeof input.temperatureC === "number" ? input.temperatureC : null;
+  const grooveDepthMm = typeof input.grooveDepthMm === "number" ? input.grooveDepthMm : null;
+  const grooveWidthMm = typeof input.grooveWidthMm === "number" ? input.grooveWidthMm : null;
+  const glandDiameterMm = typeof input.glandDiameterMm === "number" ? input.glandDiameterMm : null;
   const pressurePsi =
     typeof input.pressurePsi === "number"
       ? input.pressurePsi
@@ -246,6 +269,117 @@ function buildOringRecommendation(input: OringRecommendationInput) {
       .map(([columnCode, value]) => [columnCode.replace(/_in$/, "_mm"), (value as any).value * MM_PER_INCH]),
   );
 
+  const squeezeWindow = input.isStatic === false
+    ? getNumericWindow("oring_squeeze_pct", "reciprocating")
+    : input.application === "axial"
+      ? getNumericWindow("oring_squeeze_pct", "face")
+      : getNumericWindow("oring_squeeze_pct", "static_male_female");
+  const stretchWindow = getNumericWindow("oring_stretch_pct", "general");
+  const fillWindow = { max: 85 };
+  const candidateLimit =
+    typeof input.candidateLimit === "number" && input.candidateLimit > 0 ? input.candidateLimit : 8;
+
+  const sizeCandidates =
+    grooveDepthMm !== null && grooveWidthMm !== null && glandDiameterMm !== null
+      ? (getDatabase()
+          .prepare(
+            `
+            SELECT dash_code AS code, inner_diameter AS id, cross_section AS cs, series_code
+            FROM seal_oring_size
+            WHERE standard_id = ?
+            ORDER BY cross_section, inner_diameter
+            `,
+          )
+          .all(standardId) as any[])
+          .map((size) => {
+            const compressionPct = ((size.cs - grooveDepthMm) / size.cs) * 100;
+            const stretchPct = ((glandDiameterMm - size.id) / size.id) * 100;
+            const fillPct =
+              (Math.PI * Math.pow(size.cs / 2, 2)) / (grooveDepthMm * grooveWidthMm) * 100;
+            const compressionPenalty =
+              squeezeWindow && squeezeWindow.min !== null && squeezeWindow.max !== null
+                ? compressionPct < squeezeWindow.min
+                  ? squeezeWindow.min - compressionPct
+                  : compressionPct > squeezeWindow.max
+                    ? compressionPct - squeezeWindow.max
+                    : 0
+                : 0;
+            const stretchPenalty =
+              stretchWindow && stretchWindow.min !== null && stretchWindow.max !== null
+                ? stretchPct < stretchWindow.min
+                  ? stretchWindow.min - stretchPct
+                  : stretchPct > stretchWindow.max
+                    ? stretchPct - stretchWindow.max
+                    : 0
+                : 0;
+            const fillPenalty = fillPct > fillWindow.max ? fillPct - fillWindow.max : 0;
+            const crossSectionDelta = crossSectionMm !== null ? Math.abs(size.cs - crossSectionMm) : 0;
+            const selectedBonus = selectedSize?.dash_code === size.code ? -3 : 0;
+            const score =
+              compressionPenalty * 4 +
+              Math.abs(stretchPenalty) * 3 +
+              fillPenalty * 2 +
+              crossSectionDelta * 8 +
+              selectedBonus;
+            const reasons: string[] = [];
+
+            if (squeezeWindow?.min !== null && squeezeWindow?.max !== null) {
+              if (compressionPct < squeezeWindow.min) {
+                reasons.push(`压缩率偏低 ${compressionPct.toFixed(1)}%`);
+              } else if (compressionPct > squeezeWindow.max) {
+                reasons.push(`压缩率偏高 ${compressionPct.toFixed(1)}%`);
+              } else {
+                reasons.push(`压缩率命中 ${compressionPct.toFixed(1)}%`);
+              }
+            }
+
+            if (stretchWindow?.min !== null && stretchWindow?.max !== null) {
+              if (stretchPct < stretchWindow.min) {
+                reasons.push(`拉伸率偏低 ${stretchPct.toFixed(1)}%`);
+              } else if (stretchPct > stretchWindow.max) {
+                reasons.push(`拉伸率偏高 ${stretchPct.toFixed(1)}%`);
+              } else {
+                reasons.push(`拉伸率命中 ${stretchPct.toFixed(1)}%`);
+              }
+            }
+
+            if (fillPct > fillWindow.max) {
+              reasons.push(`槽满率偏高 ${fillPct.toFixed(1)}%`);
+            } else {
+              reasons.push(`槽满率安全 ${fillPct.toFixed(1)}%`);
+            }
+
+            if (crossSectionMm !== null && crossSectionDelta <= 0.02) {
+              reasons.push("线径与当前规格接近");
+            }
+
+            return {
+              dashCode: size.code,
+              innerDiameterMm: size.id,
+              crossSectionMm: size.cs,
+              seriesCode: size.series_code,
+              compressionPct,
+              stretchPct,
+              fillPct,
+              score,
+              withinCompression:
+                squeezeWindow?.min !== null &&
+                squeezeWindow?.max !== null &&
+                compressionPct >= squeezeWindow.min &&
+                compressionPct <= squeezeWindow.max,
+              withinStretch:
+                stretchWindow?.min !== null &&
+                stretchWindow?.max !== null &&
+                stretchPct >= stretchWindow.min &&
+                stretchPct <= stretchWindow.max,
+              withinFill: fillPct <= fillWindow.max,
+              reasons,
+            };
+          })
+          .sort((left, right) => left.score - right.score)
+          .slice(0, candidateLimit)
+      : [];
+
   return {
     selectedSize,
     mediumKey: compatibilityMatch.matchedKey,
@@ -259,6 +393,15 @@ function buildOringRecommendation(input: OringRecommendationInput) {
       : null,
     recommendedMaterials,
     recommendedMaterial: topMaterial,
+    sizingCriteria: {
+      squeezeWindowPct: squeezeWindow,
+      stretchWindowPct: stretchWindow,
+      maxFillPct: fillWindow.max,
+      grooveDepthMm,
+      grooveWidthMm,
+      glandDiameterMm,
+    },
+    sizeCandidates,
     extrusion: extrusionRow
       ? {
           rowKey: extrusionRow.row_key,

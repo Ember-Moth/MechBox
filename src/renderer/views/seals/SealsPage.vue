@@ -195,11 +195,16 @@ const refreshOringRecommendation = async () => {
             dashCode: form.value.selectedDashCode || undefined,
             crossSection: form.value.d2,
             application: sealType.value as "radial-outer" | "radial-inner" | "axial",
+            isStatic: isStatic.value,
             medium: form.value.medium,
             temperatureC: form.value.temperature,
             pressureMpa: form.value.pressure,
             hardness: form.value.hardness,
             clearanceMm: limits.value.maxClearance,
+            glandDiameterMm: form.value.d3,
+            grooveDepthMm: (form.value.d4 - form.value.d3) / 2,
+            grooveWidthMm: form.value.b1,
+            candidateLimit: 6,
         });
         if (requestId === recommendationRequestId) {
             oringRecommendation.value = recommendation;
@@ -320,6 +325,37 @@ const recommendationNote = computed(() => {
     return recommendation.extrusion?.materialDeratingApplied
         ? "硅胶/氟硅胶按 50% 间隙降额校核"
         : "";
+});
+
+const materialCandidates = computed(() =>
+    (oringRecommendation.value?.recommendedMaterials ?? []).slice(0, 4),
+);
+
+const sizeCandidates = computed(() =>
+    oringRecommendation.value?.sizeCandidates ?? [],
+);
+
+const applySizeCandidate = async (candidate: {
+    dashCode: string;
+    innerDiameterMm: number;
+    crossSectionMm: number;
+}) => {
+    form.value.selectedDashCode = candidate.dashCode;
+    form.value.d1 = candidate.innerDiameterMm;
+    form.value.d2 = candidate.crossSectionMm;
+    await onOringSelect(candidate.dashCode);
+};
+
+const squeezeCriteriaText = computed(() => {
+    const criteria = oringRecommendation.value?.sizingCriteria?.squeezeWindowPct;
+    if (!criteria?.min && criteria?.min !== 0) return "--";
+    return `${criteria.min.toFixed(0)} ~ ${criteria.max.toFixed(0)} %`;
+});
+
+const stretchCriteriaText = computed(() => {
+    const criteria = oringRecommendation.value?.sizingCriteria?.stretchWindowPct;
+    if (!criteria?.min && criteria?.min !== 0) return "--";
+    return `${criteria.min.toFixed(0)} ~ ${criteria.max.toFixed(0)} %`;
 });
 
 watch(
@@ -511,7 +547,6 @@ onMounted(async () => {
                                 <a-switch
                                     v-model:checked="isStatic"
                                     size="small"
-                                    @change="isStatic = !isStatic"
                                 />
                                 <span
                                     class="mode-tag"
@@ -818,6 +853,28 @@ onMounted(async () => {
                                     进行
                                 </span>
                             </div>
+                            <div
+                                v-if="materialCandidates.length"
+                                class="candidate-strip"
+                            >
+                                <span class="candidate-title">材质候选</span>
+                                <a-tag
+                                    v-for="material in materialCandidates"
+                                    :key="material.materialCode"
+                                    :color="
+                                        material.temperatureFit
+                                            ? material.ratingScore >= 4
+                                                ? 'green'
+                                                : material.ratingScore >= 3
+                                                  ? 'blue'
+                                                  : 'orange'
+                                            : 'red'
+                                    "
+                                >
+                                    {{ material.materialCode }}
+                                    {{ material.rating || "n/a" }}
+                                </a-tag>
+                            </div>
                         </div>
 
                         <div class="result-section">
@@ -971,6 +1028,141 @@ onMounted(async () => {
                             </div>
                             <a-alert v-for="(w,i) in results.multiPhysics.value.warnings" :key="i" :message="w.message" :type="w.level==='error'?'error':w.level==='warning'?'warning':'info'" show-icon style="margin-top:12px"/>
                         </div>
+
+                        <div class="candidate-panel">
+                            <div class="candidate-panel-header">
+                                规格候选
+                                <span class="candidate-panel-meta">
+                                    压缩率 {{ squeezeCriteriaText }} / 拉伸率
+                                    {{ stretchCriteriaText }} / 槽满率 ≤
+                                    {{
+                                        oringRecommendation?.sizingCriteria
+                                            ?.maxFillPct ?? 85
+                                    }}
+                                    %
+                                </span>
+                            </div>
+                            <table class="candidate-table">
+                                <thead>
+                                    <tr>
+                                        <th>规格</th>
+                                        <th>ID x CS</th>
+                                        <th>压缩率</th>
+                                        <th>拉伸率</th>
+                                        <th>槽满率</th>
+                                        <th>状态</th>
+                                        <th>推荐理由</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="candidate in sizeCandidates"
+                                        :key="candidate.dashCode"
+                                        :class="{
+                                            'candidate-row-active':
+                                                candidate.dashCode ===
+                                                form.selectedDashCode,
+                                        }"
+                                    >
+                                        <td>
+                                            {{ candidate.dashCode }}
+                                        </td>
+                                        <td>
+                                            {{ candidate.innerDiameterMm.toFixed(2) }}
+                                            x
+                                            {{
+                                                candidate.crossSectionMm.toFixed(
+                                                    2,
+                                                )
+                                            }}
+                                        </td>
+                                        <td>
+                                            {{
+                                                candidate.compressionPct.toFixed(
+                                                    1,
+                                                )
+                                            }}
+                                            %
+                                        </td>
+                                        <td>
+                                            {{
+                                                candidate.stretchPct.toFixed(1)
+                                            }}
+                                            %
+                                        </td>
+                                        <td>
+                                            {{ candidate.fillPct.toFixed(1) }} %
+                                        </td>
+                                        <td>
+                                            <a-tag
+                                                :color="
+                                                    candidate.withinCompression &&
+                                                    candidate.withinStretch &&
+                                                    candidate.withinFill
+                                                        ? 'green'
+                                                        : 'orange'
+                                                "
+                                            >
+                                                {{
+                                                    candidate.withinCompression &&
+                                                    candidate.withinStretch &&
+                                                    candidate.withinFill
+                                                        ? '推荐'
+                                                        : '可参考'
+                                                }}
+                                            </a-tag>
+                                        </td>
+                                        <td class="candidate-reason-cell">
+                                            <span
+                                                v-for="reason in candidate.reasons"
+                                                :key="reason"
+                                                class="candidate-reason"
+                                                :class="{
+                                                    'is-good':
+                                                        reason.includes('命中') ||
+                                                        reason.includes('安全') ||
+                                                        reason.includes('接近'),
+                                                    'is-warn':
+                                                        reason.includes('偏低') ||
+                                                        reason.includes('偏高'),
+                                                }"
+                                            >
+                                                {{ reason }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a-button
+                                                size="small"
+                                                :type="
+                                                    candidate.dashCode ===
+                                                    form.selectedDashCode
+                                                        ? 'primary'
+                                                        : 'default'
+                                                "
+                                                @click="
+                                                    applySizeCandidate(
+                                                        candidate,
+                                                    )
+                                                "
+                                            >
+                                                {{
+                                                    candidate.dashCode ===
+                                                    form.selectedDashCode
+                                                        ? "已选中"
+                                                        : "应用"
+                                                }}
+                                            </a-button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="!sizeCandidates.length">
+                                        <td colspan="8" class="candidate-empty">
+                                            需要当前沟槽尺寸和装配直径才能计算规格候选
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </a-col>
             </a-row>
@@ -1057,6 +1249,18 @@ onMounted(async () => {
     margin-top: 8px;
     color: #666;
     font-size: 11px;
+}
+.candidate-strip {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.candidate-title {
+    color: #666;
+    font-size: 11px;
+    font-weight: 700;
 }
 
 .section-header {
@@ -1149,5 +1353,67 @@ onMounted(async () => {
 .info-icon {
     color: #008294;
     cursor: help;
+}
+.candidate-panel {
+    margin-top: 14px;
+    border-top: 1px solid #dbe8ec;
+    padding-top: 12px;
+}
+.candidate-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: #0b5d6b;
+}
+.candidate-panel-meta {
+    color: #666;
+    font-size: 11px;
+    font-weight: 400;
+}
+.candidate-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.candidate-table th {
+    background: #eef5f7;
+    border: 1px solid #d8e5ea;
+    padding: 6px 4px;
+    text-align: center;
+}
+.candidate-table td {
+    border: 1px solid #e3edf1;
+    padding: 6px 4px;
+    text-align: center;
+}
+.candidate-reason-cell {
+    text-align: left !important;
+    min-width: 220px;
+}
+.candidate-reason {
+    display: inline-block;
+    margin: 2px 4px 2px 0;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #f2f4f5;
+    color: #555;
+    font-size: 11px;
+    line-height: 1.5;
+}
+.candidate-reason.is-good {
+    background: #f6ffed;
+    color: #237804;
+}
+.candidate-reason.is-warn {
+    background: #fff7e6;
+    color: #ad6800;
+}
+.candidate-row-active td {
+    background: #e6f7ff;
+}
+.candidate-empty {
+    color: #888;
+    background: #fafcfd;
 }
 </style>
