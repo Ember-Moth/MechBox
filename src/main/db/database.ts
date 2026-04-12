@@ -11,8 +11,18 @@ import hexBoltsData from "../../../data/standards/bolts/hex-bolts.json";
 let db: Database.Database;
 
 export function initDatabase() {
-  const userDataPath = app.getPath("userData");
-  const dbPath = join(userDataPath, "mechbox.db");
+  // 开发环境下将数据库存放在项目根目录的 data 文件夹中，方便查看和管理
+  // 生产环境（打包后）存放在用户数据目录，避免权限问题
+  const isDev = !app.isPackaged;
+  const dbDir = isDev
+    ? join(app.getAppPath(), "data")
+    : app.getPath("userData");
+
+  if (!existsSync(dbDir)) {
+    mkdirSync(dbDir, { recursive: true });
+  }
+
+  const dbPath = join(dbDir, "mechbox.db");
 
   db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
