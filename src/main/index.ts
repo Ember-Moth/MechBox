@@ -158,6 +158,96 @@ function registerIpcHandlers() {
   ipcMain.handle("excel-download-template", async (_, templateType: string, savePath: string) => {
     return generateTemplate(templateType as any, savePath)
   })
+
+  // ============================================================
+  // SQL Schema V3 - 新增 IPC 处理器 (基于 schema_v3.sql)
+  // ============================================================
+
+  // 六角螺母
+  ipcMain.handle("db-query-nuts", (_) => {
+    return getDatabase().prepare("SELECT * FROM fastener_hex_nut").all();
+  });
+
+  // 平垫圈
+  ipcMain.handle("db-query-washers", (_) => {
+    return getDatabase().prepare("SELECT * FROM fastener_plain_washer").all();
+  });
+
+  // 齿轮模数标准
+  ipcMain.handle("db-query-gear-modules", (_) => {
+    return getDatabase().prepare("SELECT * FROM gear_module_standard").all();
+  });
+
+  // O型圈材料
+  ipcMain.handle("db-query-oring-materials", (_) => {
+    return getDatabase().prepare("SELECT * FROM seal_oring_material").all();
+  });
+
+  // 材料等效/代换
+  ipcMain.handle("db-query-material-equivalents", (_, materialId?: string) => {
+    if (materialId) {
+      return getDatabase()
+        .prepare("SELECT * FROM material_equivalent WHERE material_id = ?")
+        .all(materialId);
+    }
+    return getDatabase().prepare("SELECT * FROM material_equivalent").all();
+  });
+
+  // 制造商
+  ipcMain.handle("db-query-manufacturers", (_) => {
+    return getDatabase().prepare("SELECT * FROM manufacturer").all();
+  });
+
+  // 厂商零件目录
+  ipcMain.handle("db-query-vendor-parts", (_, domainCode?: string) => {
+    if (domainCode) {
+      return getDatabase()
+        .prepare("SELECT * FROM vendor_part WHERE domain_code = ?")
+        .all(domainCode);
+    }
+    return getDatabase().prepare("SELECT * FROM vendor_part").all();
+  });
+
+  // 全局搜索 (FTS5)
+  ipcMain.handle("db-global-search", (_, query: string, limit: number = 20) => {
+    try {
+      return getDatabase()
+        .prepare("SELECT doc_id, entity_type, entity_id, title, snippet(search_fts, '<b>', '</b>', '...', 30) as snippet FROM search_fts JOIN search_document ON search_fts.doc_id = search_document.doc_id WHERE search_fts MATCH ? ORDER BY rank LIMIT ?")
+        .all(`${query}*`, limit);
+    } catch {
+      return [];
+    }
+  });
+
+  // 数据源
+  ipcMain.handle("db-query-sources", (_) => {
+    return getDatabase().prepare("SELECT * FROM source_provider").all();
+  });
+
+  // 标准体系
+  ipcMain.handle("db-query-standard-systems", (_) => {
+    return getDatabase().prepare("SELECT * FROM standard_system").all();
+  });
+
+  // 数据集版本
+  ipcMain.handle("db-query-datasets", (_) => {
+    return getDatabase().prepare("SELECT * FROM dataset_release").all();
+  });
+
+  // 规则表
+  ipcMain.handle("db-query-rules", (_, ruleCode?: string) => {
+    if (ruleCode) {
+      const ruleTable = getDatabase()
+        .prepare("SELECT * FROM rule_table WHERE rule_code = ?")
+        .get(ruleCode);
+      if (!ruleTable) return null;
+      const rows = getDatabase()
+        .prepare("SELECT * FROM rule_row WHERE rule_table_id = ? ORDER BY sort_order")
+        .all(ruleTable.rule_table_id);
+      return { table: ruleTable, rows };
+    }
+    return getDatabase().prepare("SELECT * FROM rule_table").all();
+  });
 }
 
 app.whenReady().then(() => {

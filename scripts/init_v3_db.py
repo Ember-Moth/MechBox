@@ -35,6 +35,17 @@ KHK_URLS = [
 
 FERROBEND_ISO_4032_URL = "https://iso-fasteners.com/iso-standard-nuts/iso-4032/"
 FERROBEND_ISO_7089_URL = "https://iso-fasteners.com/iso-standard-washers/iso-7089/"
+FERROBEND_NUT_SOURCES = [
+    ("https://iso-fasteners.com/iso-standard-nuts/iso-4032/", "std_iso_4032", "rev_iso_4032_ferrobend", "dataset_iso_4032_ferrobend", "ISO 4032"),
+    ("https://iso-fasteners.com/iso-standard-nuts/iso-4034/", "std_iso_4034", "rev_iso_4034_ferrobend", "dataset_iso_4034_ferrobend", "ISO 4034"),
+    ("https://boltport.com/standards/iso-4035/", "std_iso_4035", "rev_iso_4035_boltport", "dataset_iso_4035_boltport", "ISO 4035"),
+]
+FERROBEND_WASHER_SOURCES = [
+    ("https://iso-fasteners.com/iso-standard-washers/iso-7089/", "std_iso_7089", "rev_iso_7089_ferrobend", "dataset_iso_7089_ferrobend", "ISO 7089"),
+    ("https://iso-fasteners.com/iso-standard-washers/iso-7090/", "std_iso_7090", "rev_iso_7090_ferrobend", "dataset_iso_7090_ferrobend", "ISO 7090"),
+    ("https://iso-fasteners.com/iso-standard-washers/iso-7091/", "std_iso_7091", "rev_iso_7091_ferrobend", "dataset_iso_7091_ferrobend", "ISO 7091"),
+    ("https://iso-fasteners.com/iso-standard-washers/iso-7093/", "std_iso_7093", "rev_iso_7093_ferrobend", "dataset_iso_7093_ferrobend", "ISO 7093"),
+]
 
 
 def read_text(path: Path) -> str:
@@ -130,6 +141,28 @@ def parse_ferrobend_rows(html: str):
     return rows
 
 
+def parse_boltport_iso4035_rows(html: str):
+    table_match = re.search(
+        r'<table class="common-table-tophead">[\s\S]*?<th rowspan="2">Thread <br />D</th>[\s\S]*?</table>',
+        html,
+        re.I,
+    )
+    if not table_match:
+        return []
+
+    row_regex = re.compile(r"<tr>\s*(.*?)\s*</tr>", re.I | re.S)
+    cell_regex = re.compile(r"<t[dh][^>]*>(.*?)</t[dh]>", re.I | re.S)
+    rows = []
+    for row_html in row_regex.findall(table_match.group(0)):
+        cells = [strip_tags(cell) for cell in cell_regex.findall(row_html)]
+        if len(cells) != 11:
+            continue
+        if not cells[0].startswith("M"):
+            continue
+        rows.append(cells)
+    return rows
+
+
 def apply_schema(conn: sqlite3.Connection):
     conn.executescript(read_text(SCHEMA_PATH))
     conn.executescript(read_text(SEED_PATH))
@@ -192,114 +225,124 @@ def import_bolts(conn: sqlite3.Connection):
 
 
 def import_ferrobend_nuts(conn: sqlite3.Connection):
-    html = fetch_text(FERROBEND_ISO_4032_URL)
-    rows = parse_ferrobend_rows(html)
-    insert_rows = []
-    count = 0
-    for cells in rows:
-        if len(cells) != 3:
-            continue
-        if cells[0] == "Dimensions":
-            continue
-        designation = cells[0].replace(" ", "")
-        nominal_d = first_number(designation)
-        height_m = first_number(cells[1])
-        width_s = first_number(cells[2])
-        if nominal_d is None or height_m is None or width_s is None:
-            continue
-        nut_id = f"nut_{slugify(designation)}"
-        insert_rows.append(
-            (
-                nut_id,
-                "std_iso_4032",
-                "rev_iso_4032_ferrobend",
-                designation,
-                None,
-                nominal_d,
-                None,
-                width_s,
-                height_m,
-                None,
-                None,
-                None,
-                "dataset_iso_4032_ferrobend",
-                "Imported from FERROBEND ISO 4032 reference page",
+    for url, standard_id, revision_id, dataset_id, standard_label in FERROBEND_NUT_SOURCES:
+        html = fetch_text(url)
+        rows = parse_boltport_iso4035_rows(html) if standard_id == "std_iso_4035" else parse_ferrobend_rows(html)
+        insert_rows = []
+        count = 0
+        for cells in rows:
+            if standard_id == "std_iso_4035":
+                designation = cells[0].replace(" ", "")
+                nominal_d = first_number(designation)
+                pitch = first_number(cells[1])
+                height_m = first_number(cells[6])
+                width_s = first_number(cells[9])
+            else:
+                if len(cells) != 3:
+                    continue
+                if cells[0] == "Dimensions":
+                    continue
+                designation = cells[0].replace(" ", "")
+                nominal_d = first_number(designation)
+                pitch = None
+                height_m = first_number(cells[1])
+                width_s = first_number(cells[2])
+            if nominal_d is None or height_m is None or width_s is None:
+                continue
+            nut_id = f"nut_{slugify(standard_id)}_{slugify(designation)}"
+            insert_rows.append(
+                (
+                    nut_id,
+                    standard_id,
+                    revision_id,
+                    designation,
+                    None,
+                    nominal_d,
+                    pitch,
+                    width_s,
+                    height_m,
+                    None,
+                    None,
+                    None,
+                    dataset_id,
+                    f"Imported from {standard_label} reference page",
+                )
             )
-        )
-        count += 1
+            count += 1
 
-    conn.executemany(
-        """
-        INSERT OR IGNORE INTO fastener_hex_nut
-        (nut_id, standard_id, revision_id, designation, thread_id, nominal_d, pitch, width_s, height_m,
-         strength_class, material_code, finish_code, dataset_id, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        insert_rows,
-    )
-    conn.execute(
-        """
-        UPDATE dataset_release
-        SET row_count = ?
-        WHERE dataset_id = 'dataset_iso_4032_ferrobend'
-        """,
-        (count,),
-    )
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO fastener_hex_nut
+            (nut_id, standard_id, revision_id, designation, thread_id, nominal_d, pitch, width_s, height_m,
+             strength_class, material_code, finish_code, dataset_id, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            insert_rows,
+        )
+        conn.execute(
+            """
+            UPDATE dataset_release
+            SET row_count = ?
+            WHERE dataset_id = ?
+            """,
+            (count, dataset_id),
+        )
 
 
 def import_ferrobend_washers(conn: sqlite3.Connection):
-    html = fetch_text(FERROBEND_ISO_7089_URL)
-    rows = parse_ferrobend_rows(html)
-    insert_rows = []
-    count = 0
-    for cells in rows:
-        if len(cells) != 4:
-            continue
-        if cells[0] == "Nominal Size":
-            continue
-        designation = cells[0].replace(" ", "")
-        nominal_d = first_number(designation)
-        inner_diameter = first_number(cells[1])
-        outer_diameter = first_number(cells[2])
-        thickness = first_number(cells[3])
-        if None in (nominal_d, inner_diameter, outer_diameter, thickness):
-            continue
-        washer_id = f"washer_{slugify(designation)}"
-        insert_rows.append(
-            (
-                washer_id,
-                "std_iso_7089",
-                "rev_iso_7089_ferrobend",
-                designation,
-                nominal_d,
-                inner_diameter,
-                outer_diameter,
-                thickness,
-                None,
-                None,
-                "dataset_iso_7089_ferrobend",
-                "Imported from FERROBEND ISO 7089 reference page",
+    for url, standard_id, revision_id, dataset_id, standard_label in FERROBEND_WASHER_SOURCES:
+        html = fetch_text(url)
+        rows = parse_ferrobend_rows(html)
+        insert_rows = []
+        count = 0
+        for cells in rows:
+            if len(cells) != 4:
+                continue
+            if cells[0] == "Nominal Size":
+                continue
+            designation = cells[0].replace(" ", "")
+            nominal_d = first_number(designation)
+            inner_diameter = first_number(cells[1])
+            outer_diameter = first_number(cells[2])
+            thickness = first_number(cells[3])
+            if None in (nominal_d, inner_diameter, outer_diameter, thickness):
+                continue
+            washer_id = f"washer_{slugify(standard_id)}_{slugify(designation)}"
+            insert_rows.append(
+                (
+                    washer_id,
+                    standard_id,
+                    revision_id,
+                    designation,
+                    nominal_d,
+                    inner_diameter,
+                    outer_diameter,
+                    thickness,
+                    None,
+                    None,
+                    dataset_id,
+                    f"Imported from FERROBEND {standard_label} reference page",
+                )
             )
-        )
-        count += 1
+            count += 1
 
-    conn.executemany(
-        """
-        INSERT OR IGNORE INTO fastener_plain_washer
-        (washer_id, standard_id, revision_id, designation, nominal_d, inner_diameter, outer_diameter, thickness,
-         material_code, finish_code, dataset_id, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        insert_rows,
-    )
-    conn.execute(
-        """
-        UPDATE dataset_release
-        SET row_count = ?
-        WHERE dataset_id = 'dataset_iso_7089_ferrobend'
-        """,
-        (count,),
-    )
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO fastener_plain_washer
+            (washer_id, standard_id, revision_id, designation, nominal_d, inner_diameter, outer_diameter, thickness,
+             material_code, finish_code, dataset_id, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            insert_rows,
+        )
+        conn.execute(
+            """
+            UPDATE dataset_release
+            SET row_count = ?
+            WHERE dataset_id = ?
+            """,
+            (count, dataset_id),
+        )
 
 
 def import_bearings(conn: sqlite3.Connection):
@@ -358,7 +401,39 @@ def import_nsk_catalog_bearings(conn: sqlite3.Connection):
         ("6004", 20, 42, 12, 10300, 5000),
         ("6204", 20, 47, 14, 14100, 6600),
         ("6304", 20, 52, 15, 17500, 7900),
+        ("6005", 25, 47, 12, 11100, 5850),
+        ("6205", 25, 52, 15, 15400, 7850),
+        ("6305", 25, 62, 17, 22600, 11200),
+        ("6006", 30, 55, 13, 14600, 8300),
+        ("6206", 30, 62, 16, 21400, 11300),
         ("6306", 30, 72, 19, 29300, 15000),
+        ("6007", 35, 62, 14, 17600, 10300),
+        ("6207", 35, 72, 17, 28200, 15300),
+        ("6307", 35, 80, 21, 36500, 19200),
+        ("6008", 40, 68, 15, 18400, 11500),
+        ("6208", 40, 80, 18, 32000, 17900),
+        ("6308", 40, 90, 23, 45000, 24000),
+        ("6009", 45, 75, 16, 23000, 15200),
+        ("6209", 45, 85, 19, 34500, 20400),
+        ("6309", 45, 100, 25, 58500, 32000),
+        ("6010", 50, 80, 16, 24000, 16600),
+        ("6210", 50, 90, 20, 38500, 23200),
+        ("6310", 50, 110, 27, 68000, 38500),
+        ("6011", 55, 90, 18, 31000, 21200),
+        ("6211", 55, 100, 21, 47500, 29300),
+        ("6311", 55, 120, 29, 78500, 44500),
+        ("6012", 60, 95, 18, 32500, 23200),
+        ("6212", 60, 110, 22, 57500, 36000),
+        ("6312", 60, 130, 31, 90000, 52000),
+        ("6015", 75, 115, 20, 43500, 33500),
+        ("6215", 75, 130, 25, 73000, 49500),
+        ("6016", 80, 125, 22, 52500, 40000),
+        ("6216", 80, 140, 26, 80000, 53000),
+        ("6017", 85, 130, 22, 54500, 43000),
+        ("6217", 85, 150, 28, 92500, 62000),
+        ("6018", 90, 140, 24, 64000, 50000),
+        ("6019", 95, 145, 24, 66500, 54000),
+        ("6020", 100, 150, 24, 66000, 54000),
     ]
     conn.executemany(
         """
@@ -723,8 +798,8 @@ def seed_data_version(conn: sqlite3.Connection):
     rows = [
         ("V3_SCHEMA", "3.0.0", "system", "schema_v3"),
         ("KHK_VENDOR", "2026-04-12", "khk_gear_world", f"urls:{len(KHK_URLS)}"),
-        ("NSK_PUBLIC_PDF", "2026-04-12", "nsk_catalog", "rows:16"),
-        ("FERROBEND_FASTENER", "2026-04-12", "ferrobend_iso", "iso4032+iso7089"),
+        ("NSK_PUBLIC_PDF", "2026-04-12", "nsk_catalog", "rows:43"),
+        ("FERROBEND_FASTENER", "2026-04-12", "ferrobend_iso", "iso4032+4034+7089+7090+7091+7093+boltport4035"),
     ]
     conn.executemany(
         """
