@@ -1,6 +1,6 @@
 /**
  * 全局可复用样式组件 (Section 11.2)
- * 所有页面共享的通用样式，避免重复定义
+ * 所有页面共享的通用样式，消除重复定义
  * 别名：.toolbar = .page-toolbar, .content-body = .page-content
  */
 
@@ -45,41 +45,66 @@
   padding: 16px;
 }
 
-/* ==================== 结果展示网格 ==================== */
+/* ==================== 结果展示 ==================== */
 
-/* 结果网格 - 替代各页面重复的 result-grid */
+/* 结果区域分隔 */
+.result-section {
+  border-top: 3px solid #004d40;
+  padding-top: 12px;
+  margin-top: 16px;
+}
+
+/* 结果列标题 */
+.result-column-header {
+  font-weight: bold;
+  color: #444;
+  margin-bottom: 8px;
+  text-align: center;
+  background: #e0f2f1;
+  padding: 4px 0;
+}
+
+/* 结果网格 - 标签值对 */
 .result-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px 16px;
-  margin-top: 12px;
+  gap: 4px;
+  margin-top: 8px;
 }
 
-.result-label {
+.res-label {
+  background: #f5f5f5;
+  padding: 6px 8px;
+  border: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 12px;
   color: #64748b;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
-.result-value {
+.res-value {
+  background: #e0f2f1;
+  padding: 6px 8px;
+  text-align: right;
+  font-weight: bold;
+  border: 1px solid #80cbc4;
+  font-family: monospace;
   font-size: 14px;
-  font-weight: 600;
-  color: #1e293b;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  color: #004d40;
 }
 
-.result-value.error {
-  color: #ef4444;
+.res-value.error {
+  background: #fff1f0;
+  border-color: #ffa39e;
+  color: #cf1322;
 }
 
-.result-value.warning {
-  color: #f59e0b;
-}
-
-.result-value.success {
-  color: #22c55e;
+/* 信息图标 */
+.info-icon {
+  color: #004d40;
+  cursor: help;
+  margin-left: 4px;
 }
 
 /* ==================== 公式展示区 ==================== */
@@ -96,11 +121,32 @@
 
 .formula-box strong {
   color: #1e3a8a;
+  display: block;
+  margin-bottom: 4px;
 }
 
 .formula-box div {
   color: #334155;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ==================== 图表/预览容器 ==================== */
+
+.schematic-container {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.svg-preview {
+  width: 100%;
+  max-width: 400px;
 }
 
 /* ==================== 响应式布局 ==================== */
@@ -181,11 +227,11 @@
     gap: 6px 12px;
   }
 
-  .result-label {
+  .res-label {
     font-size: 11px;
   }
 
-  .result-value {
+  .res-value {
     font-size: 13px;
   }
 
@@ -235,16 +281,25 @@
   :deep(.ant-descriptions-small .ant-descriptions-item-content) {
     padding: 6px 8px !important;
   }
+
+  /* 结果网格紧凑 */
+  .res-label,
+  .res-value {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
 }
 
 /* ==================== 打印样式 ==================== */
 
 @media print {
-  .page-toolbar {
+  .page-toolbar,
+  .toolbar {
     display: none !important;
   }
 
-  .page-content {
+  .page-content,
+  .content-body {
     padding: 0;
     border-radius: 0;
   }

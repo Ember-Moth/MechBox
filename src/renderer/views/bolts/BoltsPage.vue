@@ -355,12 +355,4 @@ function printReport() {
 /* 使用全局统一样式 */
 
 .hint { font-size: 11px; color: #888; margin-top: 4px; }
-
-.result-section { border-top: 3px solid #004d40; padding-top: 12px; margin-top: 16px; }
-.result-column-header { font-weight: bold; color: #444; margin-bottom: 8px; text-align: center; background: #e0f2f1; padding: 4px 0; }
-.result-grid { display: grid; grid-template-columns: 1fr 120px; gap: 4px; }
-.res-label { background: #f5f5f5; padding: 6px 8px; border: 1px solid #e8e8e8; display: flex; justify-content: space-between; align-items: center; }
-.res-value { background: #e0f2f1; padding: 6px 8px; text-align: right; font-weight: bold; border: 1px solid #80cbc4; font-family: monospace; font-size: 14px; color: #004d40; }
-.res-value.error { background: #fff1f0; border-color: #ffa39e; color: #cf1322; }
-.info-icon { color: #004d40; cursor: help; }
 </style>

@@ -139,7 +139,4 @@ async function generateReport() {
 
 <style scoped>
 .latex-report-page{max-width:1000px;margin:0 auto}
-.toolbar{background:#004d40;padding:6px 16px;display:flex;justify-content:space-between;align-items:center;color:white;border-radius:4px;margin-bottom:16px}
-.brand{font-weight:bold;font-size:16px;letter-spacing:1px}.brand small{font-weight:normal;font-size:10px;opacity:.8;margin-left:8px}
-.content-body{background:#fff;border-radius:8px;padding:16px}
 </style>

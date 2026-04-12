@@ -1174,34 +1174,11 @@ onMounted(async () => {
 .tss-style-page {
     font-size: 12px;
 }
-.toolbar {
-    background: #008294;
-    padding: 6px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: white;
-}
-.brand {
-    font-weight: bold;
-    font-size: 16px;
-    letter-spacing: 1px;
-}
-.brand small {
-    font-weight: normal;
-    font-size: 10px;
-    opacity: 0.8;
-    margin-left: 8px;
-}
 
 .type-tabs :deep(.ant-tabs-nav) {
     margin-bottom: 0;
     background: #fafafa;
     border-bottom: 1px solid #ddd;
-}
-.content-body {
-    padding: 12px;
-    background: #fff;
 }
 
 .schematic-container {
@@ -1314,46 +1291,6 @@ onMounted(async () => {
     font-family: monospace;
 }
 
-.result-section {
-    border-top: 3px solid #008294;
-    padding-top: 12px;
-}
-.result-column-header {
-    font-weight: bold;
-    color: #444;
-    margin-bottom: 6px;
-    text-align: center;
-    background: #f0f0f0;
-    padding: 2px 0;
-}
-.result-grid {
-    display: grid;
-    grid-template-columns: 1fr 110px;
-    gap: 2px;
-}
-.res-label {
-    background: #f7f9fa;
-    padding: 6px 8px;
-    border: 1px solid #e8e8e8;
-}
-.res-value {
-    background: #e6f7ff;
-    padding: 6px 8px;
-    text-align: right;
-    font-weight: bold;
-    border: 1px solid #91d5ff;
-    font-family: monospace;
-    font-size: 13px;
-}
-.res-value.error {
-    background: #fff1f0;
-    border-color: #ffa39e;
-    color: #cf1322;
-}
-.info-icon {
-    color: #008294;
-    cursor: help;
-}
 .candidate-panel {
     margin-top: 14px;
     border-top: 1px solid #dbe8ec;
