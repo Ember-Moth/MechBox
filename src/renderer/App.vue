@@ -18,6 +18,9 @@ import {
     CloudUploadOutlined,
     FileTextOutlined,
     PercentageOutlined,
+    ThunderboltOutlined,
+    RocketOutlined,
+    DashboardFilled,
 } from "@ant-design/icons-vue";
 import { ConfigProvider } from "ant-design-vue";
 import Dashboard from "./views/Dashboard.vue";
@@ -25,6 +28,7 @@ import TolerancesPage from "./views/tolerances/TolerancesPage.vue";
 import SealsPage from "./views/seals/SealsPage.vue";
 import BearingsPage from "./views/bearings/BearingsPage.vue";
 import BoltsPage from "./views/bolts/BoltsPage.vue";
+import DrivesPage from "./views/DrivesPage.vue";
 import UnitConverterPage from "./views/UnitConverterPage.vue";
 import MaterialLibraryPage from "./views/MaterialLibraryPage.vue";
 import StandardPartsLibraryPage from "./views/StandardPartsLibraryPage.vue";
@@ -49,6 +53,7 @@ const menuItems = [
     { key: "seals", icon: BlockOutlined, label: "密封圈" },
     { key: "bearings", icon: SettingOutlined, label: "轴承选型" },
     { key: "bolts", icon: ToolOutlined, label: "螺栓连接" },
+    { key: "drives", icon: ThunderboltOutlined, label: "传动工具" },
     { key: "divider-2", type: "divider" },
     { key: "units", icon: SwapOutlined, label: "单位换算" },
     { key: "materials", icon: DatabaseOutlined, label: "材料库" },
@@ -137,6 +142,9 @@ onUnmounted(() => {
                         </div>
                         <div v-else-if="selectedKeys[0] === 'bolts'">
                             <BoltsPage />
+                        </div>
+                        <div v-else-if="selectedKeys[0] === 'drives'">
+                            <DrivesPage />
                         </div>
                         <div v-else-if="selectedKeys[0] === 'units'">
                             <UnitConverterPage />
